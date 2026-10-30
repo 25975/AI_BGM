@@ -1,0 +1,12 @@
+{
+  "name": "loopforge-game-bgm-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LoopForge — 纯前端程序化游戏 BGM 生成器：18 种风格、垂直分层、无缝循环、MIDI/分轨导出",
+  "scripts": {
+    "build": "node build.js",
+    "test": "node test/logic.test.js"
+  },
+  "keywords": ["game-audio", "bgm", "web-audio", "procedural-music", "chiptune"],
+  "license": "MIT"
+}
