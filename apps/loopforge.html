@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+  if (/(?:^|[?&])embed=1(?:&|$)/.test(location.search)) {
+    document.documentElement.classList.add('embed');
+  }
+</script>
 <meta name="description" content="LoopForge 游戏 BGM 工坊 — 18 种风格的纯前端程序化配乐生成器，支持无缝循环、分轨与 MIDI 导出。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23060a10'/%3E%3Cpath d='M7 20v-8M12 23V9M17 26V6M22 21V11M27 18v-4' stroke='%2367e8f9' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
 <title>LoopForge · 游戏 BGM 工坊</title>
 <style>
 /* ==========================================================================
@@ -806,6 +812,16 @@ kbd {
   .ctrl-actions .btn.big { margin-left: 0; width: 100%; }
   .style-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ---------- 嵌入统一工作台时，精简自身页头/页脚 ---------- */
+html.embed .topbar {
+  justify-content: flex-end;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+html.embed .brand { display: none; }
+html.embed .footer { display: none; }
+html.embed .app { padding-bottom: 10px; }
 
 </style>
 </head>

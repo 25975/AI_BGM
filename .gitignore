@@ -1,25 +1,24 @@
-# OS / editor
-.DS_Store
-Thumbs.db
-Desktop.ini
-.vscode/
-.idea/
-*.swp
-
-# dependencies
+# 依赖
 node_modules/
 
-# 本地测试产物（浏览器下载、渲染中间文件）
+# 本地测试产物
+test/result.json
+test/server.pid
 test/downloads*/
-test/stems-out/
-test/browser-result.json
 test/_*.js
-*.log
 
-# 本地无头浏览器配置
+# 子项目测试产物
+game-bgm-studio/test/downloads*/
+game-bgm-studio/test/browser-result.json
+game-bgm-studio/test/_*.js
+rpg-sfx-studio/test/downloads*/
+rpg-sfx-studio/test/pack-out/
+rpg-sfx-studio/test/browser-result.json
+rpg-sfx-studio/test/_*.js
+
+# 无头浏览器配置
 .chrome*/
 .chrome.pid
 
-# 本地环境变量
-.env
-.env.*
+# 日志
+*.log

@@ -81,6 +81,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   });
   const value = evalRes.result && evalRes.result.result ? evalRes.result.result.value : null;
   const evalError = evalRes.result && evalRes.result.exceptionDetails ? evalRes.result.exceptionDetails.text : null;
+  const evalDetail = evalRes.result && evalRes.result.exceptionDetails ? evalRes.result.exceptionDetails : null;
 
   let shotOk = false;
   if (shotPath) {
@@ -91,7 +92,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     }
   }
 
-  console.log(JSON.stringify({ value, evalError, errors, logs, shotOk }, null, 2));
+  console.log(JSON.stringify({ value, evalError, evalDetail, errors, logs, shotOk }, null, 2));
   ws.close();
   process.exit(errors.length ? 2 : 0);
 })().catch(e => { console.error('HARNESS ERROR', e); process.exit(1); });

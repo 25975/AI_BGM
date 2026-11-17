@@ -798,3 +798,13 @@ kbd {
   .ctrl-actions .btn.big { margin-left: 0; width: 100%; }
   .style-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ---------- 嵌入统一工作台时，精简自身页头/页脚 ---------- */
+html.embed .topbar {
+  justify-content: flex-end;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+html.embed .brand { display: none; }
+html.embed .footer { display: none; }
+html.embed .app { padding-bottom: 10px; }

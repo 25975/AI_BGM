@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+  if (/(?:^|[?&])embed=1(?:&|$)/.test(location.search)) {
+    document.documentElement.classList.add('embed');
+  }
+</script>
+<meta name="description" content="LoopForge 游戏 BGM 工坊 — 18 种风格的纯前端程序化配乐生成器，支持无缝循环、分轨与 MIDI 导出。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23060a10'/%3E%3Cpath d='M7 20v-8M12 23V9M17 26V6M22 21V11M27 18v-4' stroke='%2367e8f9' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
+<title>LoopForge · 游戏 BGM 工坊</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="bg-grid"></div>
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">◈</div>
+      <div class="brand-text">
+        <h1>LOOPFORGE <em>游戏 BGM 工坊</em></h1>
+        <p class="tagline">18 种风格 · 管弦 / 电子 / 芯片 / 东方 / 悬疑 · 纯前端合成 · 游戏可直接循环</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="btn ghost small" id="btnShare" title="把当前参数复制成链接">🔗 分享链接</button>
+      <button class="btn ghost small" id="btnHelp">⌨ 快捷键</button>
+      <button class="btn primary" id="btnRandom">🎲 随机一首</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+
+    <!-- ===================== 左栏 ===================== -->
+    <aside class="col col-left">
+
+      <section class="card prompt-card">
+        <div class="card-head">
+          <span class="num">01</span>
+          <h2>一句话画面</h2>
+          <span class="hint">自然语言解析</span>
+        </div>
+        <textarea id="prompt" rows="3" spellcheck="false"
+          placeholder="例如：雨夜的赛博都市，主角潜入大厦，紧张但不要鼓&#10;或：新手村的清晨，阳光、竖琴和长笛"></textarea>
+        <div class="prompt-quick" id="ideaChips"></div>
+        <div class="row">
+          <button class="btn ghost" id="btnIdea">🎲 换个画面</button>
+          <button class="btn primary grow" id="btnParse">解析并生成 →</button>
+        </div>
+        <div class="parse-result" id="parseResult"></div>
+      </section>
+
+      <section class="card styles-card">
+        <div class="card-head">
+          <span class="num">02</span>
+          <h2>风格预设</h2>
+          <span class="hint">点击即生成</span>
+        </div>
+        <div class="tabs" id="familyTabs"></div>
+        <div class="style-grid" id="styleGrid"></div>
+        <div class="style-detail" id="styleDetail"></div>
+      </section>
+
+      <section class="card tips-card">
+        <div class="mini-title">为什么适合游戏开发</div>
+        <ul class="tips">
+          <li><b>垂直分层</b>：强度 0–3 自动增减声部，一套素材覆盖探索 / 战斗。</li>
+          <li><b>无缝循环</b>：混响尾巴折回，循环点写进 WAV 的 smpl 块。</li>
+          <li><b>分轨导出</b>：鼓 / 贝斯 / 和声 / 旋律分层，方便引擎里做动态混音。</li>
+          <li><b>MIDI + 工程 JSON</b>：可进 DAW 二次编曲，也可回读继续生成。</li>
+        </ul>
+      </section>
+    </aside>
+
+    <!-- ===================== 中栏 ===================== -->
+    <section class="col col-center">
+
+      <div class="card player-card">
+        <div class="player-top">
+          <div class="song-id">
+            <div class="song-emoji" id="songEmoji">🏰</div>
+            <div class="song-meta">
+              <input class="song-title" id="songTitle" value="史诗管弦" spellcheck="false" maxlength="40">
+              <div class="song-sub">
+                <span id="songStyle">史诗管弦</span><i>·</i>
+                <span id="songKey">C 小调</span><i>·</i>
+                <span id="songBpm">76 BPM</span><i>·</i>
+                <span id="songBars">32 小节</span><i>·</i>
+                <span id="songNotes">0 音符</span>
+              </div>
+            </div>
+          </div>
+          <div class="transport">
+            <button class="icon-btn" id="btnStop" title="停止 (Esc)">■</button>
+            <button class="play-btn" id="btnPlay" title="播放 / 暂停 (空格)"><span>▶</span></button>
+            <button class="btn ghost small toggle on" id="btnLoop" title="循环播放">↻ 循环</button>
+            <div class="clock"><span id="timeNow">0:00.00</span><span class="dim"> / <span id="timeTotal">0:00</span></span></div>
+          </div>
+        </div>
+
+        <div class="roll-wrap">
+          <canvas id="roll" aria-label="钢琴卷帘"></canvas>
+          <div class="roll-empty" id="rollEmpty">点击「生成编曲」开始</div>
+        </div>
+
+        <div class="roll-footer">
+          <div class="legend" id="legend"></div>
+          <div class="loop-info" id="loopInfo">循环 0–32 小节</div>
+        </div>
+
+        <canvas id="viz" class="viz"></canvas>
+      </div>
+
+      <div class="card controls-card">
+        <div class="ctrl-grid">
+          <div class="ctrl">
+            <label>速度 <b id="bpmOut">76</b><span class="unit">BPM</span></label>
+            <input type="range" id="bpm" min="40" max="200" step="1" value="76">
+          </div>
+          <div class="ctrl">
+            <label>调性</label>
+            <div class="inline">
+              <select id="rootPc" class="select"></select>
+              <select id="scaleId" class="select grow"></select>
+            </div>
+          </div>
+          <div class="ctrl">
+            <label>密度 <b id="densityOut">60%</b></label>
+            <input type="range" id="density" min="10" max="95" step="1">
+          </div>
+          <div class="ctrl">
+            <label>复杂度 <b id="complexityOut">55%</b></label>
+            <input type="range" id="complexity" min="10" max="95" step="1">
+          </div>
+          <div class="ctrl">
+            <label>清晰度 · 留白 <b id="clarityOut">55%</b></label>
+            <input type="range" id="clarity" min="0" max="100" step="1" value="55"
+              title="越高，同时发声的声部越少、音区越分明；0 = 满编，100 = 极简留白">
+          </div>
+          <div class="ctrl">
+            <label>强度 · 垂直分层</label>
+            <div class="seg" id="intensitySeg">
+              <button data-v="0" title="极简：只有铺底与旋律">0</button>
+              <button data-v="1" title="基础：加入和声与轻打击">1</button>
+              <button data-v="2" title="标准：完整节奏组与副旋律">2</button>
+              <button data-v="3" title="全编制：合唱、对位与冲击音效">3</button>
+            </div>
+          </div>
+          <div class="ctrl">
+            <label>结构</label>
+            <div class="seg" id="formSeg">
+              <button data-v="loop" title="A/B 循环，游戏内直接循环">循环</button>
+              <button data-v="full" title="前奏 + A/B/A′ + 尾声，循环点排除首尾">完整</button>
+              <button data-v="cinematic" title="铺陈 → 高潮 → 回落，适合过场">电影</button>
+            </div>
+          </div>
+          <div class="ctrl">
+            <label>篇幅</label>
+            <div class="seg" id="barsSeg">
+              <button data-v="16" title="短循环，适合小场景">16</button>
+              <button data-v="32" title="标准长度">32</button>
+              <button data-v="48" title="长循环">48</button>
+              <button data-v="64" title="大世界/长时间场景">64</button>
+            </div>
+          </div>
+          <div class="ctrl">
+            <label>摇摆 <b id="swingOut">0%</b></label>
+            <input type="range" id="swing" min="0" max="60" step="1">
+          </div>
+        </div>
+
+        <div class="ctrl-actions">
+          <div class="seed-box">
+            <span>种子</span>
+            <input id="seed" type="text" inputmode="numeric" spellcheck="false">
+            <button class="btn ghost small" id="btnSeed" title="换一个种子">🎲</button>
+          </div>
+          <button class="btn ghost" id="btnVariation" title="保持风格与调性，换一个种子">✨ 变奏</button>
+          <button class="btn primary big" id="btnGenerate">生成编曲 <kbd>G</kbd></button>
+        </div>
+      </div>
+
+      <div class="card mixer-card">
+        <div class="card-head">
+          <span class="num">03</span>
+          <h2>声部与分层</h2>
+          <span class="hint" id="mixerHint">M 静音 · S 独奏 · 点击名称试听 · ⬇ 单轨</span>
+        </div>
+        <div id="mixer" class="mixer"></div>
+      </div>
+    </section>
+
+    <!-- ===================== 右栏 ===================== -->
+    <aside class="col col-right">
+
+      <section class="card export-card">
+        <div class="card-head">
+          <span class="num">04</span>
+          <h2>导出</h2>
+          <span class="hint" id="bitHint">16-bit</span>
+        </div>
+        <div class="export-row">
+          <label class="mini-label">WAV 位深</label>
+          <div class="seg tiny" id="bitSeg">
+            <button data-v="16" class="on">16-bit</button>
+            <button data-v="24">24-bit</button>
+          </div>
+        </div>
+        <label class="check"><input type="checkbox" id="seamless" checked> <span>无缝循环（混响尾巴折回开头）</span></label>
+        <label class="check"><input type="checkbox" id="exportLoopOnly" checked> <span>只导出循环区间</span></label>
+        <div class="loop-meta" id="loopMeta"></div>
+        <div class="export-actions">
+          <button class="btn primary block" id="btnWav">⬇ 导出 WAV</button>
+          <button class="btn block" id="btnMidi">导出 MIDI（多轨）</button>
+          <button class="btn block" id="btnStems">导出分轨 ZIP</button>
+          <button class="btn block" id="btnProject">导出工程 JSON</button>
+        </div>
+        <div class="export-status" id="exportStatus"></div>
+      </section>
+
+      <section class="card library-card">
+        <div class="card-head">
+          <span class="num">05</span>
+          <h2>作品库</h2>
+          <span class="hint" id="libCount">0</span>
+        </div>
+        <button class="btn block" id="btnSave">💾 保存当前作品</button>
+        <div class="library" id="library"></div>
+        <p class="tiny">作品保存在浏览器 localStorage，不会上传。</p>
+      </section>
+
+      <section class="card meta-card">
+        <div class="mini-title">循环与集成</div>
+        <div class="kv"><span>循环起点</span><b id="metaStart">—</b></div>
+        <div class="kv"><span>循环终点</span><b id="metaEnd">—</b></div>
+        <div class="kv"><span>采样点</span><b id="metaSamples">—</b></div>
+        <div class="kv"><span>循环时长</span><b id="metaDur">—</b></div>
+        <div class="kv"><span>调性 / 拍号</span><b id="metaKey">—</b></div>
+        <p class="tiny">Unity：Audio Clip 勾选 Loop<br>Unreal：Sound Wave → Looping<br>Godot：loop_mode = Forward<br>Web：source.loopStart / loopEnd</p>
+      </section>
+
+      <section class="card analysis-card">
+        <div class="card-head">
+          <span class="num">06</span>
+          <h2>结构与和声</h2>
+          <span class="hint" id="analysisHint"></span>
+        </div>
+        <div class="sections" id="sectionList"></div>
+        <div class="chords" id="chordStrip"></div>
+        <p class="tiny" id="analysisTip">段落 B / A′ 会自动提升强度，循环点默认排除前奏与尾声。</p>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="footer">
+    <span>纯前端合成 · 无采样素材 · 无服务器 · 生成结果可复现（同种子 = 同曲子）</span>
+    <span class="keys">空格 播放 / G 生成 / R 随机 / 1–4 强度 / Esc 停止</span>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-box">
+    <button class="modal-close" id="modalClose">×</button>
+    <h3>使用说明</h3>
+    <div class="modal-body">
+      <p><b>1. 一句话生成</b>：输入中文画面描述，点「解析并生成」。解析器会识别风格、场景、情绪、BPM、调性，甚至「不要鼓」。</p>
+      <p><b>2. 换风格不换骨架</b>：同一个种子在不同风格下会共用和声 / 结构随机序列，便于比较配器差异。</p>
+      <p><b>3. 垂直分层</b>：强度 0 只有铺底与主旋律，3 会加入合唱、铜管对位、冲击音效。段落 B 会自动加一层。</p>
+      <p><b>4. 无缝循环</b>：导出时把循环末尾的混响尾音叠加回开头，并把循环点写入 WAV <code>smpl</code> 块。</p>
+      <p><b>5. 分轨</b>：鼓 / 贝斯 / 和声 / 琶音 / 旋律可单独导出，在引擎里按战斗状态动态混音。</p>
+      <h4>快捷键</h4>
+      <p class="kbd-line"><kbd>空格</kbd> 播放 / 暂停　<kbd>G</kbd> 重新生成　<kbd>R</kbd> 随机风格　<kbd>1</kbd>–<kbd>4</kbd> 强度　<kbd>Esc</kbd> 停止　<kbd>←</kbd><kbd>→</kbd> 跳转小节</p>
+    </div>
+  </div>
+</div>
+
+<script src="js/util.js"></script>
+<script src="js/theory.js"></script>
+<script src="js/styles.js"></script>
+<script src="js/instruments.js"></script>
+<script src="js/composer.js"></script>
+<script src="js/prompt.js"></script>
+<script src="js/midi.js"></script>
+<script src="js/wav.js"></script>
+<script src="js/zip.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

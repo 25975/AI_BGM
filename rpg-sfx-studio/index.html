@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  if (/(?:^|[?&])embed=1(?:&|$)/.test(location.search)) {
+    document.documentElement.classList.add('embed');
+  }
+</script>
+<title>ForgeFX · RPG 音效工坊</title>
+<meta name="description" content="程序化 RPG 音效生成器：打击、交互、强化、技能、锻造，纯合成，可导出 WAV 与批量音效包。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a0908'/%3E%3Cpath d='M7 20v-8M12 23V9M17 26V6M22 21V11M27 18v-4' stroke='%23f5a623' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="page-grain" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 40 40" aria-hidden="true">
+      <path d="M6 30h28l-4 5H10z" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M13 30V16h14v14" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M20 5v9M16 9h8" fill="none" stroke="currentColor" stroke-width="2"/>
+      <circle cx="20" cy="5" r="2" fill="currentColor"/>
+    </svg>
+    <div class="brand-text">
+      <div class="brand-line"><h1>FORGEFX</h1><span class="badge">RPG SFX</span></div>
+      <p>打击 · 交互 · 强化 · 技能 · 锻造</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <span class="top-note">纯合成 · 无采样 · 可商用</span>
+    <button id="btnRandom" class="btn primary">随机音效</button>
+    <button id="btnHelp" class="btn icon" aria-label="快捷键与说明">?</button>
+  </div>
+</header>
+
+<main class="workspace">
+  <aside class="col left">
+    <section class="card">
+      <div class="card-head">
+        <span class="num">01</span>
+        <h2>音效类别</h2>
+        <span class="hint" id="presetCount"></span>
+      </div>
+      <div id="categoryTabs" class="tabs"></div>
+      <div id="presetGrid" class="preset-grid"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <span class="num">02</span>
+        <h2>风格</h2>
+      </div>
+      <div id="styleSeg" class="seg style-seg"></div>
+      <p class="hint" id="styleHint"></p>
+      <div class="row wave-row">
+        <span class="row-label">波形</span>
+        <div id="waveSeg" class="seg tiny wave-seg"></div>
+      </div>
+      <p class="hint" id="waveHint">自动：跟随风格选择波形。</p>
+    </section>
+  </aside>
+
+  <section class="col center">
+    <div class="card sound-card">
+      <div class="sound-head">
+        <div class="sound-id">
+          <div class="sound-icon" id="soundIcon">打</div>
+          <div class="sound-titles">
+            <h1 id="soundName">轻刃</h1>
+            <div class="sound-meta" id="soundMeta">打击 · 0.32s · seed 1234</div>
+          </div>
+        </div>
+        <div class="sound-actions">
+          <button id="btnPlay" class="play-btn" disabled aria-label="试听">▶</button>
+          <button id="btnReroll" class="btn ghost">换一批</button>
+        </div>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="wave" class="wave"></canvas>
+        <span class="canvas-tag">WAVEFORM</span>
+      </div>
+      <div class="canvas-wrap spectro-wrap">
+        <canvas id="spectro" class="spectro"></canvas>
+        <span class="canvas-tag">SPECTRUM</span>
+      </div>
+
+      <div class="variants-head">
+        <span class="mini-title">8 个变体</span>
+        <span class="hint">同预设，音高 / 音色随种子变化 · 1–8</span>
+      </div>
+      <div class="variants" id="variants"></div>
+    </div>
+
+    <div class="card controls-card">
+      <div class="card-head">
+        <span class="num">03</span>
+        <h2>音色参数</h2>
+        <span class="hint">向右：更重 / 更亮 / 更金属</span>
+      </div>
+      <div class="ctrl-grid" id="ctrlGrid"></div>
+      <div class="seed-row">
+        <label for="seed">种子</label>
+        <input id="seed" type="number" min="0" max="999999999" inputmode="numeric">
+        <span class="hint">同种子 = 同一音效</span>
+        <button id="btnSaveFav" class="btn ghost small">☆ 收藏</button>
+      </div>
+    </div>
+  </section>
+
+  <aside class="col right">
+    <section class="card">
+      <div class="card-head">
+        <span class="num">04</span>
+        <h2>导出 WAV</h2>
+      </div>
+      <div class="row">
+        <span class="row-label">采样率</span>
+        <div class="seg tiny" id="srSeg">
+          <button data-v="44100" class="on">44.1k</button>
+          <button data-v="48000">48k</button>
+        </div>
+      </div>
+      <div class="row">
+        <span class="row-label">位深</span>
+        <div class="seg tiny" id="bitSeg">
+          <button data-v="16" class="on">16-bit</button>
+          <button data-v="24">24-bit</button>
+        </div>
+      </div>
+      <div class="row">
+        <span class="row-label">声道</span>
+        <div class="seg tiny" id="chSeg">
+          <button data-v="2" class="on">立体声</button>
+          <button data-v="1">单声道</button>
+        </div>
+      </div>
+      <label class="check"><input type="checkbox" id="normalize" checked> 峰值归一化 −1 dBFS</label>
+      <div class="filename" id="filename">sfx_impact_blade_light_01.wav</div>
+      <button id="btnExport" class="btn primary block">导出 WAV</button>
+      <div class="status" id="exportStatus"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <span class="num">05</span>
+        <h2>批量音效包</h2>
+      </div>
+      <div id="packCats" class="pack-cats"></div>
+      <div class="row">
+        <span class="row-label">每类数量</span>
+        <strong class="row-value" id="packCountOut">4</strong>
+      </div>
+      <input id="packCount" class="range" type="range" min="2" max="12" value="4" style="--p:20%">
+      <div class="bar"><i id="packBar"></i></div>
+      <button id="btnPack" class="btn block">打包 ZIP</button>
+      <div class="status" id="packStatus"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <span class="num">06</span>
+        <h2>收藏</h2>
+        <span class="hint" id="favCount"></span>
+      </div>
+      <div id="favorites" class="favorites"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <span class="num">07</span>
+        <h2>组合技能音</h2>
+        <span class="hint" id="stackCount">0 / 4</span>
+      </div>
+      <div class="stack-actions">
+        <button id="btnAddStack" class="btn small">＋ 当前音效</button>
+        <button id="btnPlayStack" class="btn ghost small">试听</button>
+        <button id="btnExportStack" class="btn ghost small">导出</button>
+        <button id="btnClearStack" class="mini-btn" title="清空组合">✕</button>
+      </div>
+      <div id="stackList" class="stack-list"></div>
+      <div class="status" id="stackStatus">叠 2–4 个音效，做技能命中 / 连击。</div>
+    </section>
+
+    <section class="card tips">
+      <p>批量包内含 <code>manifest.json</code>、<code>README.txt</code>、<code>LICENSES.txt</code>，
+        可直接按类别建 Unity / Unreal / Godot 音效库。所有音频均为程序化合成，不含第三方采样。</p>
+    </section>
+  </aside>
+</main>
+
+<footer class="footer">
+  <span>ForgeFX · 程序化音效，无版权素材</span>
+  <span class="keys"><kbd>空格</kbd> 试听 <kbd>R</kbd> 换一批 <kbd>1–8</kbd> 变体 <kbd>← →</kbd> 切换预设</span>
+</footer>
+
+<div id="toast" class="toast" role="status"></div>
+
+<div id="helpModal" class="modal" role="dialog" aria-modal="true" aria-label="说明">
+  <div class="modal-card">
+    <button class="modal-close" aria-label="关闭">✕</button>
+    <span class="num">FORGEFX</span>
+    <h2>怎么用</h2>
+    <ol>
+      <li>左侧选类别与预设，中间会生成 8 个变体。</li>
+      <li>点变体试听；用「重量 / 亮度 / 金属感 / 魔法感 / 空间」微调。</li>
+      <li>风格切换会改变整套音色：写实、像素、暗黑、明亮。</li>
+      <li>右侧导出单个 WAV，或按类别批量打包 ZIP。</li>
+      <li>喜欢的一版点「☆ 收藏」，种子和参数都会保存。</li>
+    </ol>
+    <h3>快捷键</h3>
+    <p class="modal-keys"><kbd>空格</kbd> 试听 / 停止 &nbsp; <kbd>R</kbd> 换一批 &nbsp; <kbd>1–8</kbd> 变体 &nbsp; <kbd>← →</kbd> 预设</p>
+    <h3>关于版权</h3>
+    <p class="hint">全部由 Web Audio 实时合成，不含第三方采样；生成的音频可商用。</p>
+  </div>
+</div>
+
+<script src="js/util.js"></script>
+<script src="js/wav.js"></script>
+<script src="js/zip.js"></script>
+<script src="js/presets.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
