@@ -821,6 +821,57 @@ html.embed .topbar {
 }
 html.embed .brand { display: none; }
 html.embed .footer { display: none; }
+
+/* ---------- 参考曲目分析 ---------- */
+.ref-box { max-width: 600px; }
+.ref-note { margin: 0 0 14px; font-size: 12px; line-height: 1.75; color: var(--muted); }
+.ref-drop {
+  border: 1px dashed rgba(148, 163, 184, .35);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12.5px;
+  transition: border-color .15s, background .15s;
+}
+.ref-drop b { color: var(--text); }
+.ref-drop small { display: block; margin-top: 6px; color: var(--dim); font-size: 10.5px; }
+.ref-drop.drag { border-color: var(--cyan); background: rgba(34, 211, 238, .06); }
+.ref-url { display: flex; gap: 8px; margin-top: 10px; }
+.ref-url input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(2, 6, 12, .55);
+  color: var(--text);
+  font-size: 11.5px;
+  outline: none;
+}
+.ref-url input:focus { border-color: rgba(34, 211, 238, .55); }
+.ref-status { min-height: 18px; margin: 12px 0 4px; font-size: 11.5px; color: var(--muted); }
+.ref-status.bad { color: #fca5a5; }
+.ref-result { margin-top: 12px; }
+.ref-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ref-item {
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, .025);
+}
+.ref-item span { display: block; font-size: 9.5px; letter-spacing: .08em; color: var(--dim); text-transform: uppercase; }
+.ref-item b { display: block; margin-top: 3px; font-family: var(--mono); font-size: 13px; color: var(--cyan); }
+.ref-suggest { margin: 12px 0 6px; font-size: 12px; color: var(--muted); }
+.ref-suggest b { color: var(--text); }
+.ref-check { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--muted); }
+.ref-check input { accent-color: var(--cyan); }
+.ref-actions { margin-top: 16px; }
+@media (max-width: 560px) {
+  .ref-grid { grid-template-columns: repeat(2, 1fr); }
+  .ref-url { flex-direction: column; }
+}
 html.embed .app { padding-bottom: 10px; }
 
 </style>
@@ -840,6 +891,7 @@ html.embed .app { padding-bottom: 10px; }
       </div>
     </div>
     <div class="top-actions">
+      <button class="btn ghost small" id="btnRef" title="上传参考曲目，分析 BPM/调性/音色">🎯 参考曲目</button>
       <button class="btn ghost small" id="btnShare" title="把当前参数复制成链接">🔗 分享链接</button>
       <button class="btn ghost small" id="btnHelp">⌨ 快捷键</button>
       <button class="btn primary" id="btnRandom">🎲 随机一首</button>
@@ -1077,6 +1129,44 @@ html.embed .app { padding-bottom: 10px; }
 
 <div class="toast" id="toast"></div>
 
+<div class="modal" id="refModal" hidden>
+  <div class="modal-box ref-box">
+    <button class="modal-close" id="refClose">×</button>
+    <h3>参考曲目分析</h3>
+    <p class="ref-note">本地分析，不上传。只提取速度、调性、亮度、频段比例、节奏密度等宏观特征，不复制参考曲目的旋律、和声或录音。</p>
+    <div class="ref-drop" id="refDrop">
+      <b>拖入音频</b>，或
+      <button class="btn ghost small" id="refPick">选择文件</button>
+      <input type="file" id="refFile" accept="audio/*" hidden>
+      <small>MP3 / WAV / OGG / M4A</small>
+    </div>
+    <div class="ref-url">
+      <input id="refUrl" placeholder="或粘贴允许跨域的音频直链（.mp3 / .wav / .ogg）">
+      <button class="btn ghost small" id="refUrlBtn">分析链接</button>
+    </div>
+    <div class="ref-status" id="refStatus">等待参考音频…</div>
+    <div class="ref-result" id="refResult" hidden>
+      <div class="ref-grid">
+        <div class="ref-item"><span>BPM</span><b id="refBpm">—</b></div>
+        <div class="ref-item"><span>调性（估算）</span><b id="refKey">—</b></div>
+        <div class="ref-item"><span>频谱重心</span><b id="refCentroid">—</b></div>
+        <div class="ref-item"><span>低频</span><b id="refLow">—</b></div>
+        <div class="ref-item"><span>中频</span><b id="refMid">—</b></div>
+        <div class="ref-item"><span>高频</span><b id="refHigh">—</b></div>
+        <div class="ref-item"><span>节奏密度</span><b id="refDensity">—</b></div>
+        <div class="ref-item"><span>动态 Crest</span><b id="refCrest">—</b></div>
+        <div class="ref-item"><span>时长</span><b id="refDuration">—</b></div>
+      </div>
+      <p class="ref-suggest">建议风格：<b id="refStyle">—</b></p>
+      <label class="ref-check"><input type="checkbox" id="refUseStyle"> 同时采用建议风格</label>
+    </div>
+    <div class="row ref-actions">
+      <button class="btn ghost" id="refCancel">取消</button>
+      <button class="btn primary grow" id="refApply" disabled>应用参数并生成</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="modal" hidden>
   <div class="modal-box">
     <button class="modal-close" id="modalClose">×</button>
@@ -1088,6 +1178,7 @@ html.embed .app { padding-bottom: 10px; }
       <p><b>4. 无缝循环</b>：导出时把循环末尾的混响尾音叠加回开头，并把循环点写入 WAV <code>smpl</code> 块。</p>
       <p><b>5. 分轨</b>：鼓 / 贝斯 / 和声 / 琶音 / 旋律可单独导出，在引擎里按战斗状态动态混音。</p>
       <p><b>6. 采样</b>：弦乐 / 断奏弦乐 / 大提琴 / 铜管 / 合唱 / 定音鼓使用 FluidR3_GM 真实录音（CC BY 3.0，by Frank Wen）；女高音使用 bevibeldesign 的 CC0 真人循环长音；其他音色为实时合成。</p>
+      <p><b>7. 参考曲目</b>：点顶部「🎯 参考曲目」上传音频或可跨域直链，本地提取 BPM / 调性 / 亮度 / 频段 / 密度，再映射成生成参数；不复制原曲旋律与录音。</p>
       <h4>快捷键</h4>
       <p class="kbd-line"><kbd>空格</kbd> 播放 / 暂停　<kbd>G</kbd> 重新生成　<kbd>R</kbd> 随机风格　<kbd>1</kbd>–<kbd>4</kbd> 强度　<kbd>Esc</kbd> 停止　<kbd>←</kbd><kbd>→</kbd> 跳转小节</p>
     </div>
@@ -1591,6 +1682,297 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
     meta: META,
     play: playSample,
     playTimpani: playTimpani
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ==== js/reference.js ==== */
+/* ==========================================================================
+ * reference.js — 参考曲目分析（本地）
+ * 只提取 BPM / 调性 / 亮度 / 频段比例 / 节奏密度 / 动态等宏观特征，
+ * 不复制参考曲目的旋律、和声或录音。
+ * ========================================================================== */
+(function (global) {
+  'use strict';
+
+  var GBG = global.GBG = global.GBG || {};
+  var U = GBG.util;
+
+  function decodeArrayBuffer(ab) {
+    return new Promise(function (resolve, reject) {
+      var OAC = global.OfflineAudioContext || global.webkitOfflineAudioContext;
+      var AC = global.AudioContext || global.webkitAudioContext;
+      var ctx;
+      try {
+        ctx = OAC ? new OAC(1, 1, 44100) : new AC();
+      } catch (e) {
+        reject(new Error('浏览器不支持音频解码'));
+        return;
+      }
+      if (ctx.decodeAudioData.length > 1) {
+        ctx.decodeAudioData(ab, resolve, reject);
+      } else {
+        ctx.decodeAudioData(ab).then(resolve, reject);
+      }
+    });
+  }
+
+  function toMono(buf, maxSeconds) {
+    var sr = buf.sampleRate;
+    var n = Math.min(buf.length, Math.floor(sr * (maxSeconds || 45)));
+    var out = new Float32Array(n);
+    var chs = buf.numberOfChannels;
+    for (var ch = 0; ch < chs; ch++) {
+      var d = buf.getChannelData(ch);
+      for (var i = 0; i < n; i++) out[i] += d[i] / chs;
+    }
+    return { data: out, sr: sr };
+  }
+
+  function fft(re, im) {
+    var n = re.length;
+    for (var i = 1, j = 0; i < n; i++) {
+      var bit = n >> 1;
+      for (; j & bit; bit >>= 1) j ^= bit;
+      j ^= bit;
+      if (i < j) {
+        var tr = re[i]; re[i] = re[j]; re[j] = tr;
+        var ti = im[i]; im[i] = im[j]; im[j] = ti;
+      }
+    }
+    for (var len = 2; len <= n; len <<= 1) {
+      var ang = -2 * Math.PI / len;
+      var wlR = Math.cos(ang), wlI = Math.sin(ang);
+      for (var s = 0; s < n; s += len) {
+        var wr = 1, wi = 0;
+        for (var k = 0; k < len / 2; k++) {
+          var uR = re[s + k], uI = im[s + k];
+          var vR = re[s + k + len / 2] * wr - im[s + k + len / 2] * wi;
+          var vI = re[s + k + len / 2] * wi + im[s + k + len / 2] * wr;
+          re[s + k] = uR + vR;
+          im[s + k] = uI + vI;
+          re[s + k + len / 2] = uR - vR;
+          im[s + k + len / 2] = uI - vI;
+          var nextR = wr * wlR - wi * wlI;
+          wi = wr * wlI + wi * wlR;
+          wr = nextR;
+        }
+      }
+    }
+  }
+
+  function keyProfiles() {
+    return {
+      major: [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88],
+      minor: [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17]
+    };
+  }
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function analyzeBuffer(buf) {
+    var mono = toMono(buf, 45);
+    var d = mono.data;
+    var sr = mono.sr;
+    var seconds = d.length / sr;
+    if (seconds < 2) throw new Error('音频太短，至少需要 2 秒');
+
+    // 全局电平
+    var peak = 0, sum = 0;
+    for (var i = 0; i < d.length; i++) {
+      var a = Math.abs(d[i]);
+      if (a > peak) peak = a;
+      sum += d[i] * d[i];
+    }
+    var rms = Math.sqrt(sum / d.length);
+    var crest = 20 * Math.log10(Math.max(peak, 1e-6) / Math.max(rms, 1e-6));
+
+    // 节奏包络 / onset
+    var envHop = Math.max(128, Math.round(sr / 86));
+    var envWin = envHop * 2;
+    var env = [];
+    for (var e = 0; e + envWin < d.length; e += envHop) {
+      var es = 0;
+      for (var j = 0; j < envWin; j++) es += d[e + j] * d[e + j];
+      env.push(Math.sqrt(es / envWin));
+    }
+    var envMax = 0;
+    for (i = 0; i < env.length; i++) envMax = Math.max(envMax, env[i]);
+    var flux = [];
+    for (i = 1; i < env.length; i++) flux.push(Math.max(0, env[i] - env[i - 1]) / Math.max(envMax, 1e-6));
+
+    var fMean = 0;
+    for (i = 0; i < flux.length; i++) fMean += flux[i];
+    fMean /= Math.max(1, flux.length);
+    var fVar = 0;
+    for (i = 0; i < flux.length; i++) fVar += (flux[i] - fMean) * (flux[i] - fMean);
+    fVar = Math.sqrt(fVar / Math.max(1, flux.length));
+
+    var envRate = sr / envHop;
+    var maxLag = Math.min(120, flux.length - 2);
+    var ac = new Array(maxLag + 2).fill(0);
+    for (var lag = 1; lag <= maxLag; lag++) {
+      var s = 0, c = 0;
+      for (i = lag; i < flux.length; i++) { s += flux[i] * flux[i - lag]; c++; }
+      ac[lag] = s / Math.max(1, c);
+    }
+    var best = -1, bpm = 120;
+    for (lag = 16; lag <= 100; lag++) {
+      var cand = 60 * envRate / lag;
+      if (cand < 60 || cand > 200) continue;
+      var sc = ac[lag] || 0;
+      if (lag * 2 <= maxLag) sc += 0.5 * (ac[lag * 2] || 0);
+      if (lag * 3 <= maxLag) sc += 0.3 * (ac[lag * 3] || 0);
+      if (sc > best) { best = sc; bpm = cand; }
+    }
+    if (bpm < 70) bpm *= 2;
+    if (bpm > 180) bpm /= 2;
+    bpm = Math.round(clamp(bpm, 60, 180));
+
+    // 频谱 / chroma
+    var N = 4096;
+    var hop = 4096;
+    var chroma = new Array(12).fill(0);
+    var bassChroma = new Array(12).fill(0);
+    var centroidSum = 0, magSum = 0;
+    var low = 0, mid = 0, high = 0;
+    var specFlux = 0, prevMag = null, frames = 0;
+    var maxFrames = Math.min(Math.floor(d.length / hop), Math.floor(30 * sr / hop));
+    var win = new Float32Array(N);
+    for (i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1));
+    for (var f = 0; f < maxFrames; f++) {
+      var off = f * hop;
+      var frameRms = 0;
+      for (i = 0; i < N; i++) frameRms += d[off + i] * d[off + i];
+      if (Math.sqrt(frameRms / N) < 0.003) continue;
+      var re = new Float32Array(N), im = new Float32Array(N);
+      for (i = 0; i < N; i++) re[i] = d[off + i] * win[i];
+      fft(re, im);
+      var frameMag = new Float32Array(N / 2);
+      for (var k = 1; k < N / 2; k++) {
+        var m = Math.sqrt(re[k] * re[k] + im[k] * im[k]) / N;
+        frameMag[k] = m;
+        var freq = k * sr / N;
+        if (freq < 30 || freq > 16000) continue;
+        if (freq < 250) low += m;
+        else if (freq < 2000) mid += m;
+        else high += m;
+        if (freq >= 40 && freq <= 250) {
+          var bmidi = 69 + 12 * Math.log2(freq / 440);
+          var bpc = ((Math.round(bmidi) % 12) + 12) % 12;
+          bassChroma[bpc] += Math.sqrt(m);
+        }
+        if (freq >= 50 && freq <= 5000) {
+          var midi = 69 + 12 * Math.log2(freq / 440);
+          var pc = ((Math.round(midi) % 12) + 12) % 12;
+          chroma[pc] += Math.sqrt(m);
+        }
+        centroidSum += freq * m;
+        magSum += m;
+      }
+      if (prevMag) {
+        var sf = 0;
+        for (k = 1; k < N / 2; k += 4) sf += Math.abs(frameMag[k] - prevMag[k]);
+        specFlux += sf;
+      }
+      prevMag = frameMag;
+      frames++;
+    }
+    var total = low + mid + high;
+    if (total < 1e-9) throw new Error('参考音频几乎是静音');
+    var lowRatio = low / total, midRatio = mid / total, highRatio = high / total;
+    var centroid = centroidSum / Math.max(magSum, 1e-9);
+    var brightness = clamp((centroid - 400) / 3000, 0, 1);
+
+    // 调性：用低频声部确定主音，再用完整 chroma 判断大/小调
+    var profiles = keyProfiles();
+    var chromaSum = chroma.reduce(function (a, b) { return a + b; }, 0);
+    var bassSum = bassChroma.reduce(function (a, b) { return a + b; }, 0);
+    var bassRoot = 0, bassMax = -1;
+    for (var br = 0; br < 12; br++) {
+      if (bassChroma[br] > bassMax) { bassMax = bassChroma[br]; bassRoot = br; }
+    }
+    var bestKey = { score: -1, root: 0, mode: 'minor' };
+    Object.keys(profiles).forEach(function (mode) {
+      var prof = profiles[mode];
+      for (var root = 0; root < 12; root++) {
+        var dot = 0;
+        for (var pc = 0; pc < 12; pc++) dot += (chroma[pc] / Math.max(chromaSum, 1e-9)) * prof[(pc - root + 12) % 12];
+        if (dot > bestKey.score) bestKey = { score: dot, root: root, mode: mode };
+      }
+    });
+    var keyRoot = bassSum > 1e-9 ? bassRoot : bestKey.root;
+    var majorScore = 0, minorScore = 0;
+    for (var kp = 0; kp < 12; kp++) {
+      var cv = chroma[kp] / Math.max(chromaSum, 1e-9);
+      majorScore += cv * profiles.major[(kp - keyRoot + 12) % 12];
+      minorScore += cv * profiles.minor[(kp - keyRoot + 12) % 12];
+    }
+    var keyMode = minorScore >= majorScore ? 'minor' : 'major';
+
+    // 节奏密度 / 复杂度 / 强度
+    var onsetRate = 0;
+    var thresh = fMean + fVar * 1.0;
+    var lastOnset = -1;
+    var minGap = 0.12;
+    for (i = 1; i < flux.length - 1; i++) {
+      if (flux[i] > thresh && flux[i] >= flux[i - 1] && flux[i] >= flux[i + 1]) {
+        var ot = i / envRate;
+        if (ot - lastOnset >= minGap) {
+          onsetRate++;
+          lastOnset = ot;
+        }
+      }
+    }
+    onsetRate /= Math.max(1, seconds);
+    var density = clamp((onsetRate - 1.2) / 6.5, 0.25, 0.88);
+    var complexity = clamp(0.4 + onsetRate * 0.05 + highRatio * 0.4, 0.32, 0.88);
+    var intensity = Math.round(clamp(1.0 + (crest - 8) / 8 + lowRatio * 1.1, 0, 3));
+    var clarity = clamp(0.48 + highRatio * 0.28, 0.35, 0.72);
+
+    var scaleId = keyMode === 'major' ? 'major' : 'minor';
+    var keyLabel = GBG.theory && GBG.theory.keyLabelShort
+      ? GBG.theory.keyLabelShort(keyRoot, scaleId)
+      : (keyRoot + (scaleId === 'major' ? ' major' : ' minor'));
+
+    var suggested = 'epic';
+    if (bpm >= 115 && onsetRate > 3.0 && brightness > 0.5) suggested = 'edm';
+    else if (bpm >= 110 && lowRatio > 0.5 && onsetRate > 2.0) suggested = 'battle';
+    else if (brightness > 0.55 && bpm >= 90) suggested = 'cyberpunk';
+    else if (bpm < 92 && brightness < 0.38 && onsetRate < 1.6) suggested = 'lofi';
+    else if (brightness < 0.34 && onsetRate < 1.2) suggested = 'ambient';
+    else if (bpm < 80 && lowRatio > 0.45) suggested = 'sad';
+
+    var style = GBG.styles && GBG.styles.byId ? GBG.styles.byId(suggested) : null;
+    return {
+      bpm: bpm,
+      rootPc: keyRoot,
+      scaleId: scaleId,
+      keyShort: keyLabel,
+      brightness: +brightness.toFixed(2),
+      centroid: Math.round(centroid),
+      low: +lowRatio.toFixed(2),
+      mid: +midRatio.toFixed(2),
+      high: +highRatio.toFixed(2),
+      density: +density.toFixed(2),
+      complexity: +complexity.toFixed(2),
+      clarity: +clarity.toFixed(2),
+      intensity: intensity,
+      crest: +crest.toFixed(1),
+      onsetRate: +onsetRate.toFixed(2),
+      duration: +seconds.toFixed(1),
+      suggestedStyle: { id: suggested, name: style ? style.name : suggested }
+    };
+  }
+
+  function analyze(arrayBuffer) {
+    return decodeArrayBuffer(arrayBuffer).then(analyzeBuffer);
+  }
+
+  GBG.reference = {
+    analyze: analyze,
+    analyzeBuffer: analyzeBuffer
   };
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -7412,6 +7794,7 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
 
   var STORE_LIB = 'loopforge.library.v1';
   var STORE_LAST = 'loopforge.last.v1';
+  var refResult = null;
 
   var state = {
     song: null,
@@ -8311,6 +8694,91 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
     }
   }
 
+  /* ---------------- 参考曲目分析 ---------------- */
+  function setRefStatus(msg, bad) {
+    var el = $('refStatus');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.toggle('bad', !!bad);
+  }
+
+  function openRef() {
+    $('refModal').hidden = false;
+    $('refResult').hidden = true;
+    $('refApply').disabled = true;
+    setRefStatus('等待参考音频…');
+  }
+
+  function closeRef() {
+    $('refModal').hidden = true;
+  }
+
+  function renderRef(r) {
+    $('refBpm').textContent = r.bpm;
+    $('refKey').textContent = r.keyShort;
+    $('refCentroid').textContent = r.centroid + ' Hz';
+    $('refLow').textContent = Math.round(r.low * 100) + '%';
+    $('refMid').textContent = Math.round(r.mid * 100) + '%';
+    $('refHigh').textContent = Math.round(r.high * 100) + '%';
+    $('refDensity').textContent = Math.round(r.density * 100) + '%';
+    $('refCrest').textContent = r.crest + ' dB';
+    $('refDuration').textContent = r.duration + ' s';
+    $('refStyle').textContent = r.suggestedStyle ? r.suggestedStyle.name : '—';
+    $('refResult').hidden = false;
+    $('refApply').disabled = false;
+    setRefStatus('分析完成 · 可应用参数生成，或只参考其中一部分');
+  }
+
+  function analyzeRefBuffer(ab, label) {
+    setRefStatus('正在分析 ' + (label || '音频') + ' …');
+    GBG.reference.analyze(ab).then(function (r) {
+      refResult = r;
+      renderRef(r);
+    }).catch(function (err) {
+      setRefStatus('分析失败：' + (err && err.message ? err.message : err), true);
+      $('refApply').disabled = true;
+    });
+  }
+
+  function readRefFile(file) {
+    if (!file) return;
+    setRefStatus('读取 ' + file.name + ' …');
+    file.arrayBuffer().then(function (ab) {
+      analyzeRefBuffer(ab, file.name);
+    }).catch(function (err) {
+      setRefStatus('读取失败：' + err.message, true);
+    });
+  }
+
+  function applyRef() {
+    if (!refResult) return;
+    var r = refResult;
+    if ($('refUseStyle').checked && r.suggestedStyle) {
+      var style = GBG.styles.byId(r.suggestedStyle.id);
+      if (style) {
+        state.styleId = style.id;
+        state.family = style.family;
+        state.titleDirty = false;
+        ui.renderStyleGrid($('styleGrid'), state.family, state.styleId);
+        ui.renderStyleDetail($('styleDetail'), style);
+      }
+    }
+    $('bpm').value = r.bpm;
+    $('rootPc').value = r.rootPc;
+    if (Array.prototype.some.call($('scaleId').options, function (o) { return o.value === r.scaleId; })) {
+      $('scaleId').value = r.scaleId;
+    }
+    $('density').value = Math.round(r.density * 100);
+    $('complexity').value = Math.round(r.complexity * 100);
+    $('clarity').value = Math.round(r.clarity * 100);
+    state.intensity = U.clamp(Math.round(r.intensity), 0, 3);
+    $('seed').value = String(Math.floor(Math.random() * 90000) + 10000);
+    syncOutputs();
+    closeRef();
+    regenerate();
+    toast('已按参考生成 · ' + r.keyShort + ' · ' + r.bpm + ' BPM');
+  }
+
   /* ---------------- 事件绑定 ---------------- */
   function bindEvents() {
     $('btnPlay').addEventListener('click', togglePlay);
@@ -8467,6 +8935,54 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
 
     $('btnRandom').addEventListener('click', randomSong);
     $('btnShare').addEventListener('click', shareLink);
+    $('btnRef').addEventListener('click', openRef);
+    $('refClose').addEventListener('click', closeRef);
+    $('refCancel').addEventListener('click', closeRef);
+    $('refModal').addEventListener('click', function (e) {
+      if (e.target === this) closeRef();
+    });
+    $('refPick').addEventListener('click', function () { $('refFile').click(); });
+    $('refFile').addEventListener('change', function () {
+      readRefFile(this.files && this.files[0]);
+      this.value = '';
+    });
+    $('refDrop').addEventListener('click', function (e) {
+      if (e.target.closest('button')) return;
+      $('refFile').click();
+    });
+    ['dragenter', 'dragover'].forEach(function (ev) {
+      $('refDrop').addEventListener(ev, function (e) {
+        e.preventDefault();
+        $('refDrop').classList.add('drag');
+      });
+    });
+    ['dragleave', 'drop'].forEach(function (ev) {
+      $('refDrop').addEventListener(ev, function (e) {
+        e.preventDefault();
+        $('refDrop').classList.remove('drag');
+      });
+    });
+    $('refDrop').addEventListener('drop', function (e) {
+      var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      readRefFile(file);
+    });
+    $('refUrlBtn').addEventListener('click', function () {
+      var url = $('refUrl').value.trim();
+      if (!url) {
+        setRefStatus('请先粘贴音频直链', true);
+        return;
+      }
+      setRefStatus('正在下载参考音频…');
+      fetch(url, { mode: 'cors' }).then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.arrayBuffer();
+      }).then(function (ab) {
+        analyzeRefBuffer(ab, '在线音频');
+      }).catch(function (err) {
+        setRefStatus('链接失败：' + err.message + '。多数音乐平台不允许跨域，请下载后上传文件。', true);
+      });
+    });
+    $('refApply').addEventListener('click', applyRef);
     $('btnHelp').addEventListener('click', function () { $('modal').hidden = false; });
     $('modalClose').addEventListener('click', function () { $('modal').hidden = true; });
     $('modal').addEventListener('click', function (e) {
@@ -8519,6 +9035,7 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
       } else if (e.key === 'r' || e.key === 'R') {
         randomSong();
       } else if (e.key === 'Escape') {
+        if (!$('refModal').hidden) { closeRef(); return; }
         if (!$('modal').hidden) { $('modal').hidden = true; return; }
         stopPlay();
       } else if (e.key >= '1' && e.key <= '4') {

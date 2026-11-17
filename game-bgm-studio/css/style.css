@@ -807,4 +807,55 @@ html.embed .topbar {
 }
 html.embed .brand { display: none; }
 html.embed .footer { display: none; }
+
+/* ---------- 参考曲目分析 ---------- */
+.ref-box { max-width: 600px; }
+.ref-note { margin: 0 0 14px; font-size: 12px; line-height: 1.75; color: var(--muted); }
+.ref-drop {
+  border: 1px dashed rgba(148, 163, 184, .35);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12.5px;
+  transition: border-color .15s, background .15s;
+}
+.ref-drop b { color: var(--text); }
+.ref-drop small { display: block; margin-top: 6px; color: var(--dim); font-size: 10.5px; }
+.ref-drop.drag { border-color: var(--cyan); background: rgba(34, 211, 238, .06); }
+.ref-url { display: flex; gap: 8px; margin-top: 10px; }
+.ref-url input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(2, 6, 12, .55);
+  color: var(--text);
+  font-size: 11.5px;
+  outline: none;
+}
+.ref-url input:focus { border-color: rgba(34, 211, 238, .55); }
+.ref-status { min-height: 18px; margin: 12px 0 4px; font-size: 11.5px; color: var(--muted); }
+.ref-status.bad { color: #fca5a5; }
+.ref-result { margin-top: 12px; }
+.ref-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ref-item {
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, .025);
+}
+.ref-item span { display: block; font-size: 9.5px; letter-spacing: .08em; color: var(--dim); text-transform: uppercase; }
+.ref-item b { display: block; margin-top: 3px; font-family: var(--mono); font-size: 13px; color: var(--cyan); }
+.ref-suggest { margin: 12px 0 6px; font-size: 12px; color: var(--muted); }
+.ref-suggest b { color: var(--text); }
+.ref-check { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--muted); }
+.ref-check input { accent-color: var(--cyan); }
+.ref-actions { margin-top: 16px; }
+@media (max-width: 560px) {
+  .ref-grid { grid-template-columns: repeat(2, 1fr); }
+  .ref-url { flex-direction: column; }
+}
 html.embed .app { padding-bottom: 10px; }

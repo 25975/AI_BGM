@@ -13,6 +13,7 @@
 
   var STORE_LIB = 'loopforge.library.v1';
   var STORE_LAST = 'loopforge.last.v1';
+  var refResult = null;
 
   var state = {
     song: null,
@@ -912,6 +913,91 @@
     }
   }
 
+  /* ---------------- 参考曲目分析 ---------------- */
+  function setRefStatus(msg, bad) {
+    var el = $('refStatus');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.toggle('bad', !!bad);
+  }
+
+  function openRef() {
+    $('refModal').hidden = false;
+    $('refResult').hidden = true;
+    $('refApply').disabled = true;
+    setRefStatus('等待参考音频…');
+  }
+
+  function closeRef() {
+    $('refModal').hidden = true;
+  }
+
+  function renderRef(r) {
+    $('refBpm').textContent = r.bpm;
+    $('refKey').textContent = r.keyShort;
+    $('refCentroid').textContent = r.centroid + ' Hz';
+    $('refLow').textContent = Math.round(r.low * 100) + '%';
+    $('refMid').textContent = Math.round(r.mid * 100) + '%';
+    $('refHigh').textContent = Math.round(r.high * 100) + '%';
+    $('refDensity').textContent = Math.round(r.density * 100) + '%';
+    $('refCrest').textContent = r.crest + ' dB';
+    $('refDuration').textContent = r.duration + ' s';
+    $('refStyle').textContent = r.suggestedStyle ? r.suggestedStyle.name : '—';
+    $('refResult').hidden = false;
+    $('refApply').disabled = false;
+    setRefStatus('分析完成 · 可应用参数生成，或只参考其中一部分');
+  }
+
+  function analyzeRefBuffer(ab, label) {
+    setRefStatus('正在分析 ' + (label || '音频') + ' …');
+    GBG.reference.analyze(ab).then(function (r) {
+      refResult = r;
+      renderRef(r);
+    }).catch(function (err) {
+      setRefStatus('分析失败：' + (err && err.message ? err.message : err), true);
+      $('refApply').disabled = true;
+    });
+  }
+
+  function readRefFile(file) {
+    if (!file) return;
+    setRefStatus('读取 ' + file.name + ' …');
+    file.arrayBuffer().then(function (ab) {
+      analyzeRefBuffer(ab, file.name);
+    }).catch(function (err) {
+      setRefStatus('读取失败：' + err.message, true);
+    });
+  }
+
+  function applyRef() {
+    if (!refResult) return;
+    var r = refResult;
+    if ($('refUseStyle').checked && r.suggestedStyle) {
+      var style = GBG.styles.byId(r.suggestedStyle.id);
+      if (style) {
+        state.styleId = style.id;
+        state.family = style.family;
+        state.titleDirty = false;
+        ui.renderStyleGrid($('styleGrid'), state.family, state.styleId);
+        ui.renderStyleDetail($('styleDetail'), style);
+      }
+    }
+    $('bpm').value = r.bpm;
+    $('rootPc').value = r.rootPc;
+    if (Array.prototype.some.call($('scaleId').options, function (o) { return o.value === r.scaleId; })) {
+      $('scaleId').value = r.scaleId;
+    }
+    $('density').value = Math.round(r.density * 100);
+    $('complexity').value = Math.round(r.complexity * 100);
+    $('clarity').value = Math.round(r.clarity * 100);
+    state.intensity = U.clamp(Math.round(r.intensity), 0, 3);
+    $('seed').value = String(Math.floor(Math.random() * 90000) + 10000);
+    syncOutputs();
+    closeRef();
+    regenerate();
+    toast('已按参考生成 · ' + r.keyShort + ' · ' + r.bpm + ' BPM');
+  }
+
   /* ---------------- 事件绑定 ---------------- */
   function bindEvents() {
     $('btnPlay').addEventListener('click', togglePlay);
@@ -1068,6 +1154,54 @@
 
     $('btnRandom').addEventListener('click', randomSong);
     $('btnShare').addEventListener('click', shareLink);
+    $('btnRef').addEventListener('click', openRef);
+    $('refClose').addEventListener('click', closeRef);
+    $('refCancel').addEventListener('click', closeRef);
+    $('refModal').addEventListener('click', function (e) {
+      if (e.target === this) closeRef();
+    });
+    $('refPick').addEventListener('click', function () { $('refFile').click(); });
+    $('refFile').addEventListener('change', function () {
+      readRefFile(this.files && this.files[0]);
+      this.value = '';
+    });
+    $('refDrop').addEventListener('click', function (e) {
+      if (e.target.closest('button')) return;
+      $('refFile').click();
+    });
+    ['dragenter', 'dragover'].forEach(function (ev) {
+      $('refDrop').addEventListener(ev, function (e) {
+        e.preventDefault();
+        $('refDrop').classList.add('drag');
+      });
+    });
+    ['dragleave', 'drop'].forEach(function (ev) {
+      $('refDrop').addEventListener(ev, function (e) {
+        e.preventDefault();
+        $('refDrop').classList.remove('drag');
+      });
+    });
+    $('refDrop').addEventListener('drop', function (e) {
+      var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      readRefFile(file);
+    });
+    $('refUrlBtn').addEventListener('click', function () {
+      var url = $('refUrl').value.trim();
+      if (!url) {
+        setRefStatus('请先粘贴音频直链', true);
+        return;
+      }
+      setRefStatus('正在下载参考音频…');
+      fetch(url, { mode: 'cors' }).then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.arrayBuffer();
+      }).then(function (ab) {
+        analyzeRefBuffer(ab, '在线音频');
+      }).catch(function (err) {
+        setRefStatus('链接失败：' + err.message + '。多数音乐平台不允许跨域，请下载后上传文件。', true);
+      });
+    });
+    $('refApply').addEventListener('click', applyRef);
     $('btnHelp').addEventListener('click', function () { $('modal').hidden = false; });
     $('modalClose').addEventListener('click', function () { $('modal').hidden = true; });
     $('modal').addEventListener('click', function (e) {
@@ -1120,6 +1254,7 @@
       } else if (e.key === 'r' || e.key === 'R') {
         randomSong();
       } else if (e.key === 'Escape') {
+        if (!$('refModal').hidden) { closeRef(); return; }
         if (!$('modal').hidden) { $('modal').hidden = true; return; }
         stopPlay();
       } else if (e.key >= '1' && e.key <= '4') {

@@ -234,6 +234,34 @@
     ok(colorCount > 0, '色彩声部仍然保留（轮换登场）', colorCount);
     out.details.clarity = { fullNotes, cleanNotes, leadFull, colorCount };
 
+    /* ---- 14. 参考曲目分析 ---- */
+    ok(!!G.reference && typeof G.reference.analyze === 'function', '参考分析模块存在');
+    ok(!!document.getElementById('btnRef') && !!document.getElementById('refModal'), '参考曲目入口存在');
+    document.getElementById('btnRef').click();
+    ok(!document.getElementById('refModal').hidden, '参考弹窗打开');
+    document.getElementById('refCancel').click();
+    ok(document.getElementById('refModal').hidden, '参考弹窗关闭');
+    const rsr = 22050, rsec = 6, rn = rsr * rsec;
+    const rd = new Float32Array(rn);
+    const chord = [220, 261.63, 329.63];
+    for (let i = 0; i < rn; i++) {
+      const t = i / rsr;
+      const env = Math.min(1, t * 4, (rsec - t) * 4);
+      for (let c = 0; c < chord.length; c++) rd[i] += 0.12 * env * Math.sin(2 * Math.PI * chord[c] * t);
+    }
+    for (let b = 0; b < rsec * 2; b++) {
+      const start = Math.floor((b / 2) * rsr);
+      for (let j = 0; j < Math.floor(rsr * 0.03); j++) {
+        rd[start + j] += 0.7 * Math.exp(-j / (rsr * 0.008)) * Math.sin(2 * Math.PI * 1100 * j / rsr);
+      }
+    }
+    const refWav = G.wav.encode([rd], { sampleRate: rsr, bitDepth: 16 });
+    const ref = await G.reference.analyze(refWav);
+    ok(Math.abs(ref.bpm - 120) <= 3, '参考 BPM 识别', ref.bpm);
+    ok(ref.rootPc === 9 && ref.scaleId === 'minor', '参考调性识别', ref.keyShort);
+    ok(ref.density > 0.2 && ref.density < 0.9, '参考密度在合理范围', ref.density);
+    out.details.reference = { bpm: ref.bpm, key: ref.keyShort, density: ref.density, style: ref.suggestedStyle.name };
+
     out.details.final = {
       title: LF.state.song.meta.title,
       style: LF.state.song.meta.styleId,
