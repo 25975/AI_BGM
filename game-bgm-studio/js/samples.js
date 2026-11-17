@@ -196,9 +196,22 @@
 
     var lp = ctx.createBiquadFilter();
     lp.type = 'lowpass';
-    lp.frequency.value = Math.min(16000, 7000 + 6000 * vel);
+    lp.frequency.value = spec.tone
+      ? spec.tone * (0.72 + 0.28 * vel)
+      : Math.min(16000, 7000 + 6000 * vel);
     lp.Q.value = 0.35;
     var chain = src;
+    if (spec.eq) {
+      spec.eq.forEach(function (e) {
+        var f = ctx.createBiquadFilter();
+        f.type = e.type || 'peaking';
+        f.frequency.value = e.freq || 2500;
+        f.Q.value = e.q === undefined ? 0.9 : e.q;
+        f.gain.value = e.gain || 0;
+        chain.connect(f);
+        chain = f;
+      });
+    }
     if (spec.low) {
       var low = ctx.createBiquadFilter();
       low.type = 'lowshelf';

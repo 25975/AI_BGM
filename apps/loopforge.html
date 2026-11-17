@@ -1478,9 +1478,22 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
 
     var lp = ctx.createBiquadFilter();
     lp.type = 'lowpass';
-    lp.frequency.value = Math.min(16000, 7000 + 6000 * vel);
+    lp.frequency.value = spec.tone
+      ? spec.tone * (0.72 + 0.28 * vel)
+      : Math.min(16000, 7000 + 6000 * vel);
     lp.Q.value = 0.35;
     var chain = src;
+    if (spec.eq) {
+      spec.eq.forEach(function (e) {
+        var f = ctx.createBiquadFilter();
+        f.type = e.type || 'peaking';
+        f.frequency.value = e.freq || 2500;
+        f.Q.value = e.q === undefined ? 0.9 : e.q;
+        f.gain.value = e.gain || 0;
+        chain.connect(f);
+        chain = f;
+      });
+    }
     if (spec.low) {
       var low = ctx.createBiquadFilter();
       low.type = 'lowshelf';
@@ -2973,15 +2986,21 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
     },
     brassSection: {
       name: '铜管组', group: 'brass', gain: 0.34, sendRev: 0.34, sendDly: 0.04,
-      sample: { bank: 'brass_section', loop: true, gain: 1.8, attack: 0.015 },
+      sample: {
+        bank: 'brass_section', loop: false, gain: 1.55, attack: 0.02, tone: 6500,
+        eq: [
+          { type: 'peaking', freq: 3200, q: 0.9, gain: -2.2 },
+          { type: 'highshelf', freq: 4800, gain: -3.0 }
+        ]
+      },
       env: { a: 0.055, d: 0.35, s: 0.84, r: 0.45 },
-      filt: { type: 'lowpass', freq: 1150, q: 0.8, env: { a: 0.05, d: 0.32, amt: 2.0, s: 0.6 } },
-      body: { freq: 1000, q: 0.7, gain: 2.6 },
-      air: { amt: 0.012, freq: 2200, q: 0.5 },
+      filt: { type: 'lowpass', freq: 1100, q: 0.8, env: { a: 0.05, d: 0.32, amt: 1.6, s: 0.6 } },
+      body: { freq: 1000, q: 0.7, gain: 2.2 },
+      air: { amt: 0.006, freq: 2000, q: 0.5 },
       osc: [
         { w: 'sawtooth', mul: 1, gain: 0.5, detune: -6 },
         { w: 'sawtooth', mul: 1, gain: 0.45, detune: 7 },
-        { w: 'square', mul: 0.5, gain: 0.12 }
+        { w: 'square', mul: 0.5, gain: 0.06 }
       ],
       vib: { rate: 5, depth: 4.5, delay: 0.45 },
       spread: 0.45
@@ -2990,12 +3009,12 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
       name: '铜管重击', group: 'brass', gain: 0.38, sendRev: 0.3, sendDly: 0.05,
       env: { a: 0.008, d: 0.2, s: 0.25, r: 0.28 },
       filt: { type: 'lowpass', freq: 1400, q: 1.0, env: { a: 0.01, d: 0.2, amt: 2.2, s: 0.2 } },
-      body: { freq: 1200, q: 0.8, gain: 2.2 },
-      noise: { amt: 0.03, decay: 0.03, hp: 2200 },
+      body: { freq: 1200, q: 0.8, gain: 2.0 },
+      noise: { amt: 0.02, decay: 0.03, hp: 2200 },
       osc: [
         { w: 'sawtooth', mul: 1, gain: 0.55, detune: -7 },
         { w: 'sawtooth', mul: 1, gain: 0.55, detune: 7 },
-        { w: 'square', mul: 0.5, gain: 0.15 }
+        { w: 'square', mul: 0.5, gain: 0.08 }
       ],
       spread: 0.5
     },
