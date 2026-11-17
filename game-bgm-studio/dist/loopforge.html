@@ -8,7 +8,7 @@
     document.documentElement.classList.add('embed');
   }
 </script>
-<meta name="description" content="LoopForge 游戏 BGM 工坊 — 18 种风格的纯前端程序化配乐生成器，支持无缝循环、分轨与 MIDI 导出。">
+<meta name="description" content="LoopForge 游戏 BGM 工坊 — 19 种风格的纯前端程序化配乐生成器，支持无缝循环、分轨与 MIDI 导出。">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23060a10'/%3E%3Cpath d='M7 20v-8M12 23V9M17 26V6M22 21V11M27 18v-4' stroke='%2367e8f9' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
 <title>LoopForge · 游戏 BGM 工坊</title>
 <style>
@@ -836,7 +836,7 @@ html.embed .app { padding-bottom: 10px; }
       <div class="logo">◈</div>
       <div class="brand-text">
         <h1>LOOPFORGE <em>游戏 BGM 工坊</em></h1>
-        <p class="tagline">18 种风格 · 管弦 / 电子 / 芯片 / 东方 / 悬疑 · 纯前端合成 · 游戏可直接循环</p>
+        <p class="tagline">19 种风格 · 管弦 / 电子 / 芯片 / 东方 / 悬疑 · 纯前端合成 · 游戏可直接循环</p>
       </div>
     </div>
     <div class="top-actions">
@@ -1641,7 +1641,7 @@ html.embed .app { padding-bottom: 10px; }
 <script>
 /* ==== js/styles.js ==== */
 /* ==========================================================================
- * styles.js — 18 种游戏 BGM 风格预设
+ * styles.js — 19 种游戏 BGM 风格预设
  * 每种风格定义：速度范围 / 调式 / 和声进行 / 鼓组 / 配器分层 / 混音参数
  * 纯数据，无副作用。
  * ========================================================================== */
@@ -1705,6 +1705,41 @@ html.embed .app { padding-bottom: 10px; }
         L('horn', '圆号对位', 'counter', 'frenchHorn', 'counter', { gain: 0.32, low: 46, high: 67, minIntensity: 2 })
       ],
       reverb: 0.42, delay: 0.08, width: 0.85, lowpass: 0, gain: 0.92
+    },
+
+    /* ------------------------------------------------------------------ */
+    {
+      id: 'triumph', name: '凯旋史诗', en: 'Triumphal Epic', emoji: '🏆',
+      family: 'orchestral', color: '#f5c86b',
+      desc: '女高音无词独唱、弦乐断奏固定音型、太鼓与铜管推进；适合最终决战、胜利与加冕。',
+      tags: ['管弦', '凯旋', '女声'],
+      usage: ['最终决战', '胜利', '加冕'],
+      bpm: [134, 148], swing: 0,
+      modes: ['minor', 'harmonicMinor', 'dorian'], defaultMode: 'minor',
+      progs: ['i_Vi_III_VII', 'i_VII_VI_VII', 'i_III_VII_VI'],
+      extension: 1, density: 0.72, complexity: 0.64,
+      drums: {
+        kit: 'orch',
+        steps: {
+          kick: 'X...X...X...X...',
+          snare: '....x.......x...',
+          hat: 'x.x.x.x.x.x.x.x.',
+          taiko: 'X..x..X...x..X..',
+          tom: '..............x.',
+          crash: 'X...............'
+        },
+        fillEvery: 4, fillType: 'taiko', swing: 0,
+        intensity: { 1: ['hat'], 2: ['tom', 'taiko'], 3: ['crash', 'snare'] }
+      },
+      layers: [
+        L('ost', '弦乐断奏', 'arp', 'stringsStacc', 'arp8', { gain: 0.52, low: 55, high: 79, pan: -0.2 }),
+        L('low', '低音弦乐', 'bass', 'cello', 'pulse8', { gain: 0.55, low: 33, high: 50 }),
+        L('solo', '女高音独唱', 'lead', 'sopranoSolo', 'melody', { gain: 0.6, low: 69, high: 88, minIntensity: 0 }),
+        L('pad', '弦乐铺底', 'pad', 'stringPad', 'sustain', { gain: 0.4, low: 45, high: 72, pan: -0.3 }),
+        L('choir', '混声合唱', 'pad', 'choirPad', 'sustain', { gain: 0.3, low: 52, high: 76, minIntensity: 2, pan: 0.25 }),
+        L('brass', '铜管号角', 'counter', 'brassSection', 'counter', { gain: 0.4, low: 50, high: 74, minIntensity: 1 })
+      ],
+      reverb: 0.5, delay: 0.1, width: 0.9, lowpass: 0, gain: 0.9
     },
 
     /* ------------------------------------------------------------------ */
@@ -2544,6 +2579,18 @@ html.embed .app { padding-bottom: 10px; }
       vib: { rate: 4.8, depth: 5, delay: 0.4 },
       spread: 0.6
     },
+    stringsStacc: {
+      name: '弦乐断奏', group: 'strings', gain: 0.42, sendRev: 0.28, sendDly: 0.03,
+      env: { a: 0.012, d: 0.1, s: 0.32, r: 0.12 },
+      filt: { type: 'lowpass', freq: 3400, q: 0.7, env: { a: 0.004, d: 0.07, amt: 0.4, s: 0.7 } },
+      osc: [
+        { w: 'sawtooth', mul: 1, gain: 0.5, detune: -6 },
+        { w: 'sawtooth', mul: 1, gain: 0.5, detune: 6 },
+        { w: 'sawtooth', mul: 0.5, gain: 0.2 }
+      ],
+      vib: { rate: 5.2, depth: 3, delay: 0.08 },
+      spread: 0.55
+    },
     stringPad: {
       name: '弦乐铺底', group: 'strings', gain: 0.28, sendRev: 0.42, sendDly: 0.03,
       env: { a: 0.75, d: 0.6, s: 0.9, r: 1.4 },
@@ -2755,6 +2802,19 @@ html.embed .app { padding-bottom: 10px; }
       ],
       vib: { rate: 4.4, depth: 8, delay: 1.0 },
       spread: 0.6
+    },
+    sopranoSolo: {
+      name: '女高音独唱', group: 'vocal', gain: 1.2, sendRev: 0.55, sendDly: 0.14,
+      env: { a: 0.3, d: 0.6, s: 0.9, r: 1.6 },
+      filt: { type: 'lowpass', freq: 9000, q: 0.3 },
+      voices: [
+        {
+          mul: 1, gain: 0.7, pan: 0, detune: 0, osc: 2, breath: 0.09, dry: 0.1,
+          formants: [{ f: 880, q: 5, g: 1 }, { f: 1250, q: 6, g: 0.7 }, { f: 3100, q: 8, g: 0.35 }]
+        }
+      ],
+      vib: { rate: 5.2, depth: 14, delay: 0.55 },
+      spread: 0.15
     },
     organPad: {
       name: '风琴', group: 'synth', gain: 0.25, sendRev: 0.28, sendDly: 0.04,
@@ -3529,6 +3589,7 @@ html.embed .app { padding-bottom: 10px; }
 
   var TITLES = {
     epic: ['王座之影', '远山号角', '破晓誓约', '龙脊之上'],
+    triumph: ['胜利之冠', '加冕时刻', '破晓凯旋', '最后一面旗'],
     adventure: ['风与原野', '旅途第一站', '地平线之外', '旅人的歌'],
     battle: ['钢铁之舞', '绝境反击', '血与火', '最后一击'],
     cyberpunk: ['霓虹残响', '义体心跳', '雨夜数据流', '零号街区'],
@@ -4841,6 +4902,7 @@ html.embed .app { padding-bottom: 10px; }
   /* 风格关键词（权重叠加） */
   var STYLE_WORDS = {
     epic: ['史诗', '宏大', '交响', '管弦', '电影感', '决战', '最终', '王座', '巨龙', '英雄', '传奇', 'orchestral', 'epic', 'cinematic', 'symphonic'],
+    triumph: ['凯旋', '胜利', '加冕', 'triumph', 'victory', 'victorious', 'celebration'],
     adventure: ['冒险', '探索', '旅途', '开放世界', '草原', '平原', '村庄', '田园', '阳光', '希望', '启程', 'adventure', 'explore', 'journey', 'overworld'],
     battle: ['战斗', '交战', '厮杀', '战斗音乐', '厮杀', '进攻', '军团', '战鼓', 'battle', 'combat', 'fight', 'war'],
     cyberpunk: ['赛博', '赛博朋克', '霓虹', '未来都市', '义体', '黑客', '雨夜', '都市夜景', '机械', 'cyberpunk', 'neon', 'hacker', 'dystopia'],
@@ -4864,6 +4926,7 @@ html.embed .app { padding-bottom: 10px; }
   var SCENES = [
     { words: ['主菜单', '标题界面', '开始界面', 'menu', 'title'], styles: { epic: 2.2, space: 1.4, cyberpunk: 1.2, sad: 0.8 }, label: '主菜单' },
     { words: ['boss', '首领', '最终战', '决战', '魔王'], styles: { epic: 2.4, battle: 2.6, dnb: 1.2 }, label: 'Boss 战' },
+    { words: ['胜利', '加冕', '凯旋', 'victory', 'triumph'], styles: { triumph: 3, epic: 1 }, label: '胜利' },
     { words: ['战斗', '打怪', '副本', '战场'], styles: { battle: 2.6, epic: 1.2, dnb: 1 }, label: '战斗' },
     { words: ['探索', '大地图', '开放世界', '跑图'], styles: { adventure: 2.4, celtic: 1, space: 0.8 }, label: '探索' },
     { words: ['城镇', '村庄', '主城', '城市'], styles: { adventure: 1.8, casual: 1.2, celtic: 1.1, lofi: 0.8 }, label: '城镇' },
@@ -5124,10 +5187,10 @@ html.embed .app { padding-bottom: 10px; }
     piano: 0, ePiano: 4, celesta: 8, musicBox: 10, vibes: 11, marimba: 12,
     glassBell: 9, fmBell: 14,
     harp: 46, guzheng: 107, pipa: 107, koto: 107, shamisen: 106, lute: 24,
-    pizzStrings: 45, strings: 48, stringPad: 49, soloViolin: 40, fiddle: 110,
+    pizzStrings: 45, strings: 48, stringsStacc: 48, stringPad: 49, soloViolin: 40, fiddle: 110,
     cello: 42, brassSection: 61, brassStab: 62, frenchHorn: 60,
     flute: 73, recorder: 74, whistle: 72, dizi: 72, shakuhachi: 77, erhu: 110,
-    warmPad: 89, glassPad: 91, choirPad: 52, organPad: 16,
+    warmPad: 89, glassPad: 91, choirPad: 52, sopranoSolo: 53, organPad: 16,
     supersaw: 81, sawLead: 81, squareLead: 80, pulse25: 80, pulse12: 80,
     pluckSynth: 84, triangleBass: 38, sineSub: 38, sawBass: 38, reeseBass: 39,
     acidBass: 87, fm808: 38, uprightBass: 32,
@@ -5148,11 +5211,11 @@ html.embed .app { padding-bottom: 10px; }
     piano: 'Piano', ePiano: 'E.Piano', celesta: 'Celesta', musicBox: 'Music Box',
     vibes: 'Vibes', marimba: 'Marimba', glassBell: 'Glass Bell', fmBell: 'FM Bell',
     harp: 'Harp', guzheng: 'Guzheng', pipa: 'Pipa', koto: 'Koto', shamisen: 'Shamisen',
-    lute: 'Lute', pizzStrings: 'Pizzicato', strings: 'Strings', stringPad: 'String Pad',
+    lute: 'Lute', pizzStrings: 'Pizzicato', strings: 'Strings', stringsStacc: 'Strings Stacc', stringPad: 'String Pad',
     soloViolin: 'Violin', fiddle: 'Fiddle', cello: 'Cello', brassSection: 'Brass',
     brassStab: 'Brass Stab', frenchHorn: 'Horn', flute: 'Flute', recorder: 'Recorder',
     whistle: 'Tin Whistle', dizi: 'Dizi', shakuhachi: 'Shakuhachi', erhu: 'Erhu',
-    warmPad: 'Warm Pad', glassPad: 'Glass Pad', choirPad: 'Choir', organPad: 'Organ',
+    warmPad: 'Warm Pad', glassPad: 'Glass Pad', choirPad: 'Choir', sopranoSolo: 'Soprano', organPad: 'Organ',
     supersaw: 'Supersaw', sawLead: 'Saw Lead', squareLead: 'Square Lead',
     pulse25: 'Pulse 25', pulse12: 'Pulse 12', pluckSynth: 'Pluck',
     triangleBass: 'Triangle Bass', sineSub: 'Sub Bass', sawBass: 'Saw Bass',

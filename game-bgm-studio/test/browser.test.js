@@ -12,7 +12,7 @@
 
   const song = LF.state.song;
   ok(!!song, '应用已生成歌曲');
-  ok(document.querySelectorAll('.style-item').length === 18, '18 个风格卡片', document.querySelectorAll('.style-item').length);
+  ok(document.querySelectorAll('.style-item').length === 19, '19 个风格卡片', document.querySelectorAll('.style-item').length);
   ok(!!document.getElementById('roll').width, '卷帘画布已初始化');
   out.details.initial = { title: song.meta.title, style: song.meta.styleId, notes: song.stats.notes };
 
@@ -173,7 +173,7 @@
 
     /* ---- 12. 多风格电平 ---- */
     const levels = {};
-    for (const id of ['battle', 'edm', 'chiptune', 'lofi', 'jazz', 'horror']) {
+    for (const id of ['battle', 'edm', 'chiptune', 'lofi', 'jazz', 'horror', 'triumph']) {
       LF.state.styleId = id;
       LF.state.intensity = 2;
       LF.regenerate({ silent: true });

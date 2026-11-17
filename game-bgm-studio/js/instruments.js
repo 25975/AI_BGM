@@ -254,6 +254,18 @@
       vib: { rate: 4.8, depth: 5, delay: 0.4 },
       spread: 0.6
     },
+    stringsStacc: {
+      name: '弦乐断奏', group: 'strings', gain: 0.42, sendRev: 0.28, sendDly: 0.03,
+      env: { a: 0.012, d: 0.1, s: 0.32, r: 0.12 },
+      filt: { type: 'lowpass', freq: 3400, q: 0.7, env: { a: 0.004, d: 0.07, amt: 0.4, s: 0.7 } },
+      osc: [
+        { w: 'sawtooth', mul: 1, gain: 0.5, detune: -6 },
+        { w: 'sawtooth', mul: 1, gain: 0.5, detune: 6 },
+        { w: 'sawtooth', mul: 0.5, gain: 0.2 }
+      ],
+      vib: { rate: 5.2, depth: 3, delay: 0.08 },
+      spread: 0.55
+    },
     stringPad: {
       name: '弦乐铺底', group: 'strings', gain: 0.28, sendRev: 0.42, sendDly: 0.03,
       env: { a: 0.75, d: 0.6, s: 0.9, r: 1.4 },
@@ -465,6 +477,19 @@
       ],
       vib: { rate: 4.4, depth: 8, delay: 1.0 },
       spread: 0.6
+    },
+    sopranoSolo: {
+      name: '女高音独唱', group: 'vocal', gain: 1.2, sendRev: 0.55, sendDly: 0.14,
+      env: { a: 0.3, d: 0.6, s: 0.9, r: 1.6 },
+      filt: { type: 'lowpass', freq: 9000, q: 0.3 },
+      voices: [
+        {
+          mul: 1, gain: 0.7, pan: 0, detune: 0, osc: 2, breath: 0.09, dry: 0.1,
+          formants: [{ f: 880, q: 5, g: 1 }, { f: 1250, q: 6, g: 0.7 }, { f: 3100, q: 8, g: 0.35 }]
+        }
+      ],
+      vib: { rate: 5.2, depth: 14, delay: 0.55 },
+      spread: 0.15
     },
     organPad: {
       name: '风琴', group: 'synth', gain: 0.25, sendRev: 0.28, sendDly: 0.04,

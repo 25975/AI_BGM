@@ -1,5 +1,5 @@
 /* ==========================================================================
- * styles.js — 18 种游戏 BGM 风格预设
+ * styles.js — 19 种游戏 BGM 风格预设
  * 每种风格定义：速度范围 / 调式 / 和声进行 / 鼓组 / 配器分层 / 混音参数
  * 纯数据，无副作用。
  * ========================================================================== */
@@ -63,6 +63,41 @@
         L('horn', '圆号对位', 'counter', 'frenchHorn', 'counter', { gain: 0.32, low: 46, high: 67, minIntensity: 2 })
       ],
       reverb: 0.42, delay: 0.08, width: 0.85, lowpass: 0, gain: 0.92
+    },
+
+    /* ------------------------------------------------------------------ */
+    {
+      id: 'triumph', name: '凯旋史诗', en: 'Triumphal Epic', emoji: '🏆',
+      family: 'orchestral', color: '#f5c86b',
+      desc: '女高音无词独唱、弦乐断奏固定音型、太鼓与铜管推进；适合最终决战、胜利与加冕。',
+      tags: ['管弦', '凯旋', '女声'],
+      usage: ['最终决战', '胜利', '加冕'],
+      bpm: [134, 148], swing: 0,
+      modes: ['minor', 'harmonicMinor', 'dorian'], defaultMode: 'minor',
+      progs: ['i_Vi_III_VII', 'i_VII_VI_VII', 'i_III_VII_VI'],
+      extension: 1, density: 0.72, complexity: 0.64,
+      drums: {
+        kit: 'orch',
+        steps: {
+          kick: 'X...X...X...X...',
+          snare: '....x.......x...',
+          hat: 'x.x.x.x.x.x.x.x.',
+          taiko: 'X..x..X...x..X..',
+          tom: '..............x.',
+          crash: 'X...............'
+        },
+        fillEvery: 4, fillType: 'taiko', swing: 0,
+        intensity: { 1: ['hat'], 2: ['tom', 'taiko'], 3: ['crash', 'snare'] }
+      },
+      layers: [
+        L('ost', '弦乐断奏', 'arp', 'stringsStacc', 'arp8', { gain: 0.52, low: 55, high: 79, pan: -0.2 }),
+        L('low', '低音弦乐', 'bass', 'cello', 'pulse8', { gain: 0.55, low: 33, high: 50 }),
+        L('solo', '女高音独唱', 'lead', 'sopranoSolo', 'melody', { gain: 0.6, low: 69, high: 88, minIntensity: 0 }),
+        L('pad', '弦乐铺底', 'pad', 'stringPad', 'sustain', { gain: 0.4, low: 45, high: 72, pan: -0.3 }),
+        L('choir', '混声合唱', 'pad', 'choirPad', 'sustain', { gain: 0.3, low: 52, high: 76, minIntensity: 2, pan: 0.25 }),
+        L('brass', '铜管号角', 'counter', 'brassSection', 'counter', { gain: 0.4, low: 50, high: 74, minIntensity: 1 })
+      ],
+      reverb: 0.5, delay: 0.1, width: 0.9, lowpass: 0, gain: 0.9
     },
 
     /* ------------------------------------------------------------------ */

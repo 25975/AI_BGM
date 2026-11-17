@@ -16,6 +16,7 @@
   /* 风格关键词（权重叠加） */
   var STYLE_WORDS = {
     epic: ['史诗', '宏大', '交响', '管弦', '电影感', '决战', '最终', '王座', '巨龙', '英雄', '传奇', 'orchestral', 'epic', 'cinematic', 'symphonic'],
+    triumph: ['凯旋', '胜利', '加冕', 'triumph', 'victory', 'victorious', 'celebration'],
     adventure: ['冒险', '探索', '旅途', '开放世界', '草原', '平原', '村庄', '田园', '阳光', '希望', '启程', 'adventure', 'explore', 'journey', 'overworld'],
     battle: ['战斗', '交战', '厮杀', '战斗音乐', '厮杀', '进攻', '军团', '战鼓', 'battle', 'combat', 'fight', 'war'],
     cyberpunk: ['赛博', '赛博朋克', '霓虹', '未来都市', '义体', '黑客', '雨夜', '都市夜景', '机械', 'cyberpunk', 'neon', 'hacker', 'dystopia'],
@@ -39,6 +40,7 @@
   var SCENES = [
     { words: ['主菜单', '标题界面', '开始界面', 'menu', 'title'], styles: { epic: 2.2, space: 1.4, cyberpunk: 1.2, sad: 0.8 }, label: '主菜单' },
     { words: ['boss', '首领', '最终战', '决战', '魔王'], styles: { epic: 2.4, battle: 2.6, dnb: 1.2 }, label: 'Boss 战' },
+    { words: ['胜利', '加冕', '凯旋', 'victory', 'triumph'], styles: { triumph: 3, epic: 1 }, label: '胜利' },
     { words: ['战斗', '打怪', '副本', '战场'], styles: { battle: 2.6, epic: 1.2, dnb: 1 }, label: '战斗' },
     { words: ['探索', '大地图', '开放世界', '跑图'], styles: { adventure: 2.4, celtic: 1, space: 0.8 }, label: '探索' },
     { words: ['城镇', '村庄', '主城', '城市'], styles: { adventure: 1.8, casual: 1.2, celtic: 1.1, lofi: 0.8 }, label: '城镇' },
