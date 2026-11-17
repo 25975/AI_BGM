@@ -234,6 +234,21 @@
     ok(colorCount > 0, '色彩声部仍然保留（轮换登场）', colorCount);
     out.details.clarity = { fullNotes, cleanNotes, leadFull, colorCount };
 
+    /* ---- 13b. 精选生成 / 抓耳评分 ---- */
+    ok(typeof G.composer.generateBest === 'function', '精选生成 API 存在');
+    ok(!!document.getElementById('btnBest'), '精选按钮存在');
+    const bestSong = G.composer.generateBest({
+      styleId: 'triumph', seed: 'best-test', bars: 16, intensity: 2, clarity: 0.55
+    }, 8);
+    ok(bestSong.meta.bestOf === 8 && bestSong.meta.quality >= 0 && bestSong.meta.quality <= 100,
+      '精选 8 选 1 元数据', { bestOf: bestSong.meta.bestOf, quality: bestSong.meta.quality });
+    const bsig = s => s.parts.map(p => p.notes.map(n => n.midi + '@' + n.t.toFixed(3)).join(',')).join('|');
+    const bestSong2 = G.composer.generateBest({
+      styleId: 'triumph', seed: 'best-test', bars: 16, intensity: 2, clarity: 0.55
+    }, 8);
+    ok(bsig(bestSong) === bsig(bestSong2), '精选结果可复现');
+    out.details.best = { quality: bestSong.meta.quality, seed: bestSong.meta.seed, notes: bestSong.stats.notes };
+
     /* ---- 14. 参考曲目分析 ---- */
     ok(!!G.reference && typeof G.reference.analyze === 'function', '参考分析模块存在');
     ok(!!document.getElementById('btnRef') && !!document.getElementById('refModal'), '参考曲目入口存在');
@@ -241,6 +256,11 @@
     ok(!document.getElementById('refModal').hidden, '参考弹窗打开');
     document.getElementById('refCancel').click();
     ok(document.getElementById('refModal').hidden, '参考弹窗关闭');
+    document.getElementById('btnRef').click();
+    document.getElementById('refUrl').value = 'https://pixabay.com/zh/music/search/?order=ec';
+    document.getElementById('refUrlBtn').click();
+    ok(document.getElementById('refStatus').textContent.indexOf('Pixabay') !== -1, 'Pixabay 链接给出明确提示');
+    document.getElementById('refCancel').click();
     const rsr = 22050, rsec = 6, rn = rsr * rsec;
     const rd = new Float32Array(rn);
     const chord = [220, 261.63, 329.63];

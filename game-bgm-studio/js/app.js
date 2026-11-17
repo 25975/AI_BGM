@@ -283,9 +283,13 @@
   function regenerate(opts) {
     opts = opts || {};
     var params = readParams();
+    var useBest = !!opts.best;
+    var candidateCount = opts.candidates || 8;
     var song;
     try {
-      song = GBG.composer.generate(params);
+      song = useBest
+        ? GBG.composer.generateBest(params, candidateCount)
+        : GBG.composer.generate(params);
     } catch (e) {
       console.error(e);
       toast('生成失败：' + e.message);
@@ -310,13 +314,18 @@
     roll.setSong(song);
 
     $('songTitle').value = song.meta.title;
+    $('seed').value = String(song.meta.seed);
     setSeg('intensitySeg', state.intensity);
     setSeg('formSeg', state.form);
     setSeg('barsSeg', state.bars);
     renderAll();
     autosaveLast();
     updateHash();
-    if (!opts.silent) toast('已生成 · ' + song.meta.title + ' · ' + song.stats.notes + ' 音符');
+    if (!opts.silent) {
+      toast(useBest
+        ? '🏆 精选 ' + song.meta.bestOf + ' 选 1 · 抓耳分 ' + song.meta.quality
+        : '已生成 · ' + song.meta.title + ' · ' + song.stats.notes + ' 音符');
+    }
   }
 
   function renderAll() {
@@ -1017,10 +1026,10 @@
     });
 
     $('btnGenerate').addEventListener('click', function () { regenerate(); });
+    $('btnBest').addEventListener('click', function () { regenerate({ best: true, candidates: 8 }); });
     $('btnVariation').addEventListener('click', function () {
       $('seed').value = String(Math.floor(Math.random() * 90000) + 10000);
-      regenerate();
-      toast('已变奏 · 新种子 ' + $('seed').value);
+      regenerate({ best: true, candidates: 8 });
     });
     $('btnSeed').addEventListener('click', function () {
       $('seed').value = String(Math.floor(Math.random() * 90000) + 10000);
@@ -1191,6 +1200,10 @@
         setRefStatus('请先粘贴音频直链', true);
         return;
       }
+      if (/^https?:\/\/(www\.)?pixabay\.com\//i.test(url)) {
+        setRefStatus('Pixabay 页面有 Cloudflare 防护，且官方 API 只支持图片/视频，浏览器无法直接抓取音乐。请在该页下载 MP3，再拖入上方文件框。', true);
+        return;
+      }
       setRefStatus('正在下载参考音频…');
       fetch(url, { mode: 'cors' }).then(function (res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -1250,7 +1263,8 @@
         e.preventDefault();
         togglePlay();
       } else if (e.key === 'g' || e.key === 'G') {
-        regenerate();
+        if (e.shiftKey) regenerate({ best: true, candidates: 8 });
+        else regenerate();
       } else if (e.key === 'r' || e.key === 'R') {
         randomSong();
       } else if (e.key === 'Escape') {
@@ -1333,7 +1347,7 @@
     setSeg('barsSeg', state.bars);
     ui.renderStyleGrid($('styleGrid'), state.family, state.styleId);
     ui.renderStyleDetail($('styleDetail'), pick);
-    regenerate();
+    regenerate({ best: true, candidates: 8 });
   }
 
   /* ---------------- 启动 ---------------- */

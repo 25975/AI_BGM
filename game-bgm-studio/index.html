@@ -31,7 +31,7 @@
       <button class="btn ghost small" id="btnRef" title="上传参考曲目，分析 BPM/调性/音色">🎯 参考曲目</button>
       <button class="btn ghost small" id="btnShare" title="把当前参数复制成链接">🔗 分享链接</button>
       <button class="btn ghost small" id="btnHelp">⌨ 快捷键</button>
-      <button class="btn primary" id="btnRandom">🎲 随机一首</button>
+      <button class="btn primary" id="btnRandom">🎲 随机精选</button>
     </div>
   </header>
 
@@ -181,7 +181,8 @@
             <input id="seed" type="text" inputmode="numeric" spellcheck="false">
             <button class="btn ghost small" id="btnSeed" title="换一个种子">🎲</button>
           </div>
-          <button class="btn ghost" id="btnVariation" title="保持风格与调性，换一个种子">✨ 变奏</button>
+          <button class="btn ghost" id="btnVariation" title="保持风格与调性，精选一个变奏">✨ 精选变奏</button>
+          <button class="btn ghost" id="btnBest" title="生成 8 个候选，自动挑最抓耳的">🏆 精选</button>
           <button class="btn primary big" id="btnGenerate">生成编曲 <kbd>G</kbd></button>
         </div>
       </div>
@@ -260,7 +261,7 @@
 
   <footer class="footer">
     <span>真实采样 + 程序化合成 · 无服务器 · 生成结果可复现（同种子 = 同曲子）</span>
-    <span class="keys">FluidR3_GM (CC BY 3.0) · female loops (CC0)　|　空格 播放 / G 生成 / R 随机 / 1–4 强度 / Esc 停止</span>
+    <span class="keys">FluidR3_GM (CC BY 3.0) · female loops (CC0)　|　空格 播放 / G 生成 / Shift+G 精选 / R 随机 / 1–4 强度 / Esc 停止</span>
   </footer>
 </div>
 
@@ -271,6 +272,7 @@
     <button class="modal-close" id="refClose">×</button>
     <h3>参考曲目分析</h3>
     <p class="ref-note">本地分析，不上传。只提取速度、调性、亮度、频段比例、节奏密度等宏观特征，不复制参考曲目的旋律、和声或录音。</p>
+    <p class="ref-source">免费参考曲库：<a href="https://pixabay.com/zh/music/search/?order=ec" target="_blank" rel="noopener">Pixabay 音乐 ↗</a><span>下载 MP3 后拖入下方</span></p>
     <div class="ref-drop" id="refDrop">
       <b>拖入音频</b>，或
       <button class="btn ghost small" id="refPick">选择文件</button>
@@ -316,8 +318,9 @@
       <p><b>5. 分轨</b>：鼓 / 贝斯 / 和声 / 琶音 / 旋律可单独导出，在引擎里按战斗状态动态混音。</p>
       <p><b>6. 采样</b>：弦乐 / 断奏弦乐 / 大提琴 / 铜管 / 合唱 / 定音鼓使用 FluidR3_GM 真实录音（CC BY 3.0，by Frank Wen）；女高音使用 bevibeldesign 的 CC0 真人循环长音；其他音色为实时合成。</p>
       <p><b>7. 参考曲目</b>：点顶部「🎯 参考曲目」上传音频或可跨域直链，本地提取 BPM / 调性 / 亮度 / 频段 / 密度，再映射成生成参数；不复制原曲旋律与录音。</p>
+      <p><b>8. 精选生成</b>：点「🏆 精选」或按 <kbd>Shift</kbd>+<kbd>G</kbd>，会生成 8 个候选并按“抓耳分”挑最高分；普通「生成编曲」仍是单次生成。</p>
       <h4>快捷键</h4>
-      <p class="kbd-line"><kbd>空格</kbd> 播放 / 暂停　<kbd>G</kbd> 重新生成　<kbd>R</kbd> 随机风格　<kbd>1</kbd>–<kbd>4</kbd> 强度　<kbd>Esc</kbd> 停止　<kbd>←</kbd><kbd>→</kbd> 跳转小节</p>
+      <p class="kbd-line"><kbd>空格</kbd> 播放 / 暂停　<kbd>G</kbd> 重新生成　<kbd>Shift</kbd>+<kbd>G</kbd> 精选　<kbd>R</kbd> 随机风格　<kbd>1</kbd>–<kbd>4</kbd> 强度　<kbd>Esc</kbd> 停止　<kbd>←</kbd><kbd>→</kbd> 跳转小节</p>
     </div>
   </div>
 </div>

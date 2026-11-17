@@ -905,7 +905,6 @@
 
   /* ---------------- 旋律 ---------------- */
   function makeMotif(bars, layer, style, rng, template) {
-    var rootPc = style.meta ? 0 : 0;
     var notes = [];
     var center = (layer.low + layer.high) / 2;
     var centerDeg = nearestDeg(style.rootPc, style.scaleId, center);
@@ -913,28 +912,54 @@
     var shape = rng.pick(['arch', 'arch', 'wave', 'descend', 'ascend', 'flat']);
     var density = style.density;
     var tpl = template;
+    var minDeg = centerDeg - 5;
+    var maxDeg = centerDeg + 5;
 
-    for (var b = 0; b < bars; b++) {
+    // 先写一个 1 小节的核心 hook，再靠重复/模进形成记忆点
+    var barA = [];
+    for (var k = 0; k < tpl.length; k++) {
+      if (k > 0 && !rng.chance(0.52 + 0.4 * density)) continue;
       var dir = 0;
-      if (shape === 'arch') dir = b < bars / 2 ? 1 : -1;
+      if (shape === 'arch') dir = k < tpl.length / 2 ? 1 : -1;
+      else if (shape === 'wave') dir = k % 2 === 0 ? 1 : -1;
       else if (shape === 'descend') dir = -1;
       else if (shape === 'ascend') dir = 1;
-      else if (shape === 'wave') dir = b % 2 === 0 ? 1 : -1;
+      var stepChoices, weights;
+      if (dir > 0) { stepChoices = [1, 2, 2, 3, 0, -1]; weights = [4, 3, 2, 1, 3, 1]; }
+      else if (dir < 0) { stepChoices = [-1, -2, -2, -3, 0, 1]; weights = [4, 3, 2, 1, 3, 1]; }
+      else { stepChoices = [0, 1, -1, 2, -2]; weights = [3, 3, 3, 1, 1]; }
+      var step = rng.chance(0.16) ? 0 : rng.weighted(stepChoices, weights);
+      deg = U.clamp(deg + step, minDeg, maxDeg);
+      var midi = degreeMidiInRange(style.rootPc, style.scaleId, deg, layer.low, layer.high);
+      deg = nearestDeg(style.rootPc, style.scaleId, midi);
+      barA.push({
+        t: tpl[k],
+        deg: deg,
+        vel: (tpl[k] % 2 === 0 ? 0.84 : 0.66) * (0.92 + rng.next() * 0.12)
+      });
+    }
+    if (!barA.length) {
+      barA.push({ t: 0, deg: deg, vel: 0.8 });
+      barA.push({ t: 2, deg: deg + 2, vel: 0.7 });
+    }
 
-      for (var k = 0; k < tpl.length; k++) {
-        if (k > 0 && !rng.chance(0.45 + 0.5 * density)) continue;
-        var stepChoices, weights;
-        if (dir > 0) { stepChoices = [1, 2, 2, 3, 0, -1]; weights = [4, 3, 2, 1, 2, 1]; }
-        else if (dir < 0) { stepChoices = [-1, -2, -2, -3, 0, 1]; weights = [4, 3, 2, 1, 2, 1]; }
-        else { stepChoices = [0, 1, -1, 2, -2]; weights = [2, 3, 3, 1, 1]; }
-        deg += rng.weighted(stepChoices, weights);
-        var midi = degreeMidiInRange(style.rootPc, style.scaleId, deg, layer.low, layer.high);
-        var realDeg = nearestDeg(style.rootPc, style.scaleId, midi);
-        deg = realDeg;
+    for (var b = 0; b < bars; b++) {
+      // 0/1 小节原样重复，2 小节上行模进，3 小节回落回答
+      var trans = 0;
+      if (b % 4 === 2) trans = rng.pick([1, -1, 0, 2]);
+      else if (b % 4 === 3) trans = rng.pick([0, 0, -1, 1]);
+      var cell = barA;
+      if (b > 0 && rng.chance(0.14)) {
+        cell = barA.map(function (n) { return { t: n.t, deg: n.deg, vel: n.vel }; });
+        if (cell.length) cell[cell.length - 1].deg += rng.pick([1, -1]);
+      }
+      for (var c = 0; c < cell.length; c++) {
+        var d = U.clamp(cell[c].deg + trans, minDeg, maxDeg);
+        var m = degreeMidiInRange(style.rootPc, style.scaleId, d, layer.low, layer.high);
         notes.push({
-          t: b * 4 + tpl[k],
-          deg: deg,
-          vel: (tpl[k] % 2 === 0 ? 0.8 : 0.65) * (0.9 + rng.next() * 0.15)
+          t: b * 4 + cell[c].t,
+          deg: nearestDeg(style.rootPc, style.scaleId, m),
+          vel: cell[c].vel * (b % 4 === 2 ? 1.03 : 1)
         });
       }
     }
@@ -956,8 +981,8 @@
 
   function varyMotif(motif, bars, rng, style, layer) {
     var out = motif.notes.map(function (n) { return { t: n.t, deg: n.deg, vel: n.vel }; });
-    var trans = rng.pick([0, 0, 1, -1, 2, -2]);
-    if (rng.chance(0.35)) {
+    var trans = rng.pick([0, 0, 0, 1, -1, 2]);
+    if (rng.chance(0.2)) {
       // 只重复前两小节
       out = out.filter(function (n) { return n.t < bars * 2 - 0.05; });
     }
@@ -998,7 +1023,7 @@
     var phraseBars = song.meta.bpm < 80 ? 4 : 4;
     var prevMidi = null;
 
-    song.sections.forEach(function (sec) {
+    song.sections.forEach(function (sec, si) {
       var total = sec.bars;
       var phraseCount = Math.max(1, Math.ceil(total / phraseBars));
       for (var p = 0; p < phraseCount; p++) {
@@ -1007,7 +1032,8 @@
         if (bars <= 0) continue;
         var inten = barIntensity(song, startBar);
         if (inten < layer.minIntensity) continue;
-        if (!motif || rng.chance(0.3)) motif = makeMotif(bars, layer, style, rng, template);
+        var newSectionHook = si > 0 && p === 0 && rng.chance(0.55);
+        if (!motif || newSectionHook || rng.chance(0.12)) motif = makeMotif(bars, layer, style, rng, template);
         else motif = varyMotif(motif, bars, rng, style, layer);
 
         var mnotes = motif.notes.slice();
@@ -1320,6 +1346,122 @@
     return song;
   }
 
+  /* ---------------- 抓耳度评分 / 多候选 ---------------- */
+  function phraseRhythmScore(notes, bars) {
+    var phrases = [];
+    for (var s = 0; s < bars; s += 4) {
+      var sig = [];
+      notes.forEach(function (n) {
+        if (n.t >= s * 4 - 0.01 && n.t < (s + 4) * 4) sig.push((n.t - s * 4).toFixed(2));
+      });
+      if (sig.length) phrases.push(sig.join(','));
+    }
+    if (phrases.length < 2) return 0.5;
+    var counts = {};
+    var max = 0;
+    phrases.forEach(function (p) {
+      counts[p] = (counts[p] || 0) + 1;
+      if (counts[p] > max) max = counts[p];
+    });
+    return max / phrases.length;
+  }
+
+  function scoreSong(song) {
+    var lead = null;
+    song.parts.forEach(function (p) {
+      if (p.role === 'lead' && p.notes.length && !lead) lead = p;
+    });
+    if (!lead || lead.notes.length < 4) return 0;
+    var notes = lead.notes;
+    var bars = song.meta.bars;
+    var perBar = notes.length / bars;
+    var score = 50;
+
+    // 旋律密度：太稀或太满都不容易记住
+    score += 10 * (1 - Math.min(1, Math.abs(perBar - 2.2) / 1.8));
+
+    var min = Infinity, max = -Infinity;
+    var steps = 0, leaps = 0, intervals = 0;
+    for (var i = 0; i < notes.length; i++) {
+      if (notes[i].midi < min) min = notes[i].midi;
+      if (notes[i].midi > max) max = notes[i].midi;
+      if (i > 0) {
+        var diff = Math.abs(notes[i].midi - notes[i - 1].midi);
+        intervals++;
+        if (diff <= 2) steps++;
+        else if (diff >= 5) leaps++;
+      }
+    }
+    var range = max - min;
+    if (range >= 7 && range <= 19) score += 7;
+    else score -= Math.min(12, Math.abs(range - 13) * 1.2);
+
+    var stepRatio = steps / Math.max(1, intervals);
+    score += (stepRatio - 0.55) * 16;
+    score -= (leaps / Math.max(1, intervals)) * 4;
+
+    var strongN = 0, strongChord = 0;
+    var off = 0;
+    notes.forEach(function (n) {
+      var beat = ((n.t % 4) + 4) % 4;
+      if (beat < 0.02 || Math.abs(beat - 2) < 0.02) {
+        strongN++;
+        var ch = chordAtBeat(song, n.t);
+        if (ch && T.isChordTone(n.midi, ch)) strongChord++;
+      }
+      if (beat % 1 > 0.12) off++;
+    });
+    var strongRatio = strongChord / Math.max(1, strongN);
+    score += (strongRatio - 0.5) * 14;
+
+    var offRatio = off / notes.length;
+    if (offRatio >= 0.12 && offRatio <= 0.45) score += 5;
+    else score -= Math.abs(offRatio - 0.25) * 10;
+
+    // 4 小节乐句节奏重复度：hook 的“洗脑”核心
+    var rhythmSim = phraseRhythmScore(notes, bars);
+    score += (rhythmSim - 0.35) * 28;
+
+    var last = notes[notes.length - 1];
+    var lastChord = chordAtBeat(song, last.t);
+    if (lastChord && T.isChordTone(last.midi, lastChord)) score += 4;
+    if (lastChord && T.mod12(last.midi) === lastChord.rootPc) score += 3;
+
+    var longNotes = notes.filter(function (n) { return n.d >= 0.9; }).length;
+    if (longNotes / notes.length >= 0.22) score += 3;
+
+    if (perBar > 4.2) score -= (perBar - 4.2) * 4;
+    if (perBar < 1.1) score -= (1.1 - perBar) * 8;
+
+    return Math.round(U.clamp(score, 0, 100));
+  }
+
+  function generateBest(params, count) {
+    params = params || {};
+    count = Math.max(1, Math.min(16, count || 8));
+    var baseSeed = params.seed === undefined ? (Date.now() % 100000) : params.seed;
+    var best = null, bestScore = -1, bestSeed = baseSeed;
+    for (var i = 0; i < count; i++) {
+      var p = {};
+      for (var k in params) if (Object.prototype.hasOwnProperty.call(params, k)) p[k] = params[k];
+      p.seed = String(baseSeed) + '-c' + (i + 1);
+      var candidate = generate(p);
+      var sc = scoreSong(candidate);
+      candidate.meta.quality = sc;
+      if (sc > bestScore) {
+        best = candidate;
+        bestScore = sc;
+        bestSeed = p.seed;
+      }
+    }
+    best.meta.baseSeed = baseSeed;
+    best.meta.bestOf = count;
+    best.meta.candidates = count;
+    best.meta.seed = bestSeed;
+    best.meta.quality = bestScore;
+    return best;
+  }
+
   /* 换风格时保留和声骨架（可选） */
   function restyle(song, newStyleId, opts) {
     opts = opts || {};
@@ -1344,6 +1486,8 @@
 
   GBG.composer = {
     generate: generate,
+    generateBest: generateBest,
+    scoreSong: scoreSong,
     restyle: restyle,
     sectionAtBar: sectionAtBar,
     barIntensity: barIntensity,

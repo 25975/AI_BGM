@@ -825,6 +825,10 @@ html.embed .footer { display: none; }
 /* ---------- 参考曲目分析 ---------- */
 .ref-box { max-width: 600px; }
 .ref-note { margin: 0 0 14px; font-size: 12px; line-height: 1.75; color: var(--muted); }
+.ref-source { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; margin: -4px 0 12px; font-size: 11.5px; color: var(--dim); }
+.ref-source a { color: var(--cyan); text-decoration: none; border-bottom: 1px dotted rgba(34, 211, 238, .5); }
+.ref-source a:hover { border-bottom-style: solid; }
+.ref-source span { color: var(--dim); }
 .ref-drop {
   border: 1px dashed rgba(148, 163, 184, .35);
   border-radius: 12px;
@@ -894,7 +898,7 @@ html.embed .app { padding-bottom: 10px; }
       <button class="btn ghost small" id="btnRef" title="上传参考曲目，分析 BPM/调性/音色">🎯 参考曲目</button>
       <button class="btn ghost small" id="btnShare" title="把当前参数复制成链接">🔗 分享链接</button>
       <button class="btn ghost small" id="btnHelp">⌨ 快捷键</button>
-      <button class="btn primary" id="btnRandom">🎲 随机一首</button>
+      <button class="btn primary" id="btnRandom">🎲 随机精选</button>
     </div>
   </header>
 
@@ -1044,7 +1048,8 @@ html.embed .app { padding-bottom: 10px; }
             <input id="seed" type="text" inputmode="numeric" spellcheck="false">
             <button class="btn ghost small" id="btnSeed" title="换一个种子">🎲</button>
           </div>
-          <button class="btn ghost" id="btnVariation" title="保持风格与调性，换一个种子">✨ 变奏</button>
+          <button class="btn ghost" id="btnVariation" title="保持风格与调性，精选一个变奏">✨ 精选变奏</button>
+          <button class="btn ghost" id="btnBest" title="生成 8 个候选，自动挑最抓耳的">🏆 精选</button>
           <button class="btn primary big" id="btnGenerate">生成编曲 <kbd>G</kbd></button>
         </div>
       </div>
@@ -1123,7 +1128,7 @@ html.embed .app { padding-bottom: 10px; }
 
   <footer class="footer">
     <span>真实采样 + 程序化合成 · 无服务器 · 生成结果可复现（同种子 = 同曲子）</span>
-    <span class="keys">FluidR3_GM (CC BY 3.0) · female loops (CC0)　|　空格 播放 / G 生成 / R 随机 / 1–4 强度 / Esc 停止</span>
+    <span class="keys">FluidR3_GM (CC BY 3.0) · female loops (CC0)　|　空格 播放 / G 生成 / Shift+G 精选 / R 随机 / 1–4 强度 / Esc 停止</span>
   </footer>
 </div>
 
@@ -1134,6 +1139,7 @@ html.embed .app { padding-bottom: 10px; }
     <button class="modal-close" id="refClose">×</button>
     <h3>参考曲目分析</h3>
     <p class="ref-note">本地分析，不上传。只提取速度、调性、亮度、频段比例、节奏密度等宏观特征，不复制参考曲目的旋律、和声或录音。</p>
+    <p class="ref-source">免费参考曲库：<a href="https://pixabay.com/zh/music/search/?order=ec" target="_blank" rel="noopener">Pixabay 音乐 ↗</a><span>下载 MP3 后拖入下方</span></p>
     <div class="ref-drop" id="refDrop">
       <b>拖入音频</b>，或
       <button class="btn ghost small" id="refPick">选择文件</button>
@@ -1179,8 +1185,9 @@ html.embed .app { padding-bottom: 10px; }
       <p><b>5. 分轨</b>：鼓 / 贝斯 / 和声 / 琶音 / 旋律可单独导出，在引擎里按战斗状态动态混音。</p>
       <p><b>6. 采样</b>：弦乐 / 断奏弦乐 / 大提琴 / 铜管 / 合唱 / 定音鼓使用 FluidR3_GM 真实录音（CC BY 3.0，by Frank Wen）；女高音使用 bevibeldesign 的 CC0 真人循环长音；其他音色为实时合成。</p>
       <p><b>7. 参考曲目</b>：点顶部「🎯 参考曲目」上传音频或可跨域直链，本地提取 BPM / 调性 / 亮度 / 频段 / 密度，再映射成生成参数；不复制原曲旋律与录音。</p>
+      <p><b>8. 精选生成</b>：点「🏆 精选」或按 <kbd>Shift</kbd>+<kbd>G</kbd>，会生成 8 个候选并按“抓耳分”挑最高分；普通「生成编曲」仍是单次生成。</p>
       <h4>快捷键</h4>
-      <p class="kbd-line"><kbd>空格</kbd> 播放 / 暂停　<kbd>G</kbd> 重新生成　<kbd>R</kbd> 随机风格　<kbd>1</kbd>–<kbd>4</kbd> 强度　<kbd>Esc</kbd> 停止　<kbd>←</kbd><kbd>→</kbd> 跳转小节</p>
+      <p class="kbd-line"><kbd>空格</kbd> 播放 / 暂停　<kbd>G</kbd> 重新生成　<kbd>Shift</kbd>+<kbd>G</kbd> 精选　<kbd>R</kbd> 随机风格　<kbd>1</kbd>–<kbd>4</kbd> 强度　<kbd>Esc</kbd> 停止　<kbd>←</kbd><kbd>→</kbd> 跳转小节</p>
     </div>
   </div>
 </div>
@@ -5267,7 +5274,6 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
 
   /* ---------------- 旋律 ---------------- */
   function makeMotif(bars, layer, style, rng, template) {
-    var rootPc = style.meta ? 0 : 0;
     var notes = [];
     var center = (layer.low + layer.high) / 2;
     var centerDeg = nearestDeg(style.rootPc, style.scaleId, center);
@@ -5275,28 +5281,54 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
     var shape = rng.pick(['arch', 'arch', 'wave', 'descend', 'ascend', 'flat']);
     var density = style.density;
     var tpl = template;
+    var minDeg = centerDeg - 5;
+    var maxDeg = centerDeg + 5;
 
-    for (var b = 0; b < bars; b++) {
+    // 先写一个 1 小节的核心 hook，再靠重复/模进形成记忆点
+    var barA = [];
+    for (var k = 0; k < tpl.length; k++) {
+      if (k > 0 && !rng.chance(0.52 + 0.4 * density)) continue;
       var dir = 0;
-      if (shape === 'arch') dir = b < bars / 2 ? 1 : -1;
+      if (shape === 'arch') dir = k < tpl.length / 2 ? 1 : -1;
+      else if (shape === 'wave') dir = k % 2 === 0 ? 1 : -1;
       else if (shape === 'descend') dir = -1;
       else if (shape === 'ascend') dir = 1;
-      else if (shape === 'wave') dir = b % 2 === 0 ? 1 : -1;
+      var stepChoices, weights;
+      if (dir > 0) { stepChoices = [1, 2, 2, 3, 0, -1]; weights = [4, 3, 2, 1, 3, 1]; }
+      else if (dir < 0) { stepChoices = [-1, -2, -2, -3, 0, 1]; weights = [4, 3, 2, 1, 3, 1]; }
+      else { stepChoices = [0, 1, -1, 2, -2]; weights = [3, 3, 3, 1, 1]; }
+      var step = rng.chance(0.16) ? 0 : rng.weighted(stepChoices, weights);
+      deg = U.clamp(deg + step, minDeg, maxDeg);
+      var midi = degreeMidiInRange(style.rootPc, style.scaleId, deg, layer.low, layer.high);
+      deg = nearestDeg(style.rootPc, style.scaleId, midi);
+      barA.push({
+        t: tpl[k],
+        deg: deg,
+        vel: (tpl[k] % 2 === 0 ? 0.84 : 0.66) * (0.92 + rng.next() * 0.12)
+      });
+    }
+    if (!barA.length) {
+      barA.push({ t: 0, deg: deg, vel: 0.8 });
+      barA.push({ t: 2, deg: deg + 2, vel: 0.7 });
+    }
 
-      for (var k = 0; k < tpl.length; k++) {
-        if (k > 0 && !rng.chance(0.45 + 0.5 * density)) continue;
-        var stepChoices, weights;
-        if (dir > 0) { stepChoices = [1, 2, 2, 3, 0, -1]; weights = [4, 3, 2, 1, 2, 1]; }
-        else if (dir < 0) { stepChoices = [-1, -2, -2, -3, 0, 1]; weights = [4, 3, 2, 1, 2, 1]; }
-        else { stepChoices = [0, 1, -1, 2, -2]; weights = [2, 3, 3, 1, 1]; }
-        deg += rng.weighted(stepChoices, weights);
-        var midi = degreeMidiInRange(style.rootPc, style.scaleId, deg, layer.low, layer.high);
-        var realDeg = nearestDeg(style.rootPc, style.scaleId, midi);
-        deg = realDeg;
+    for (var b = 0; b < bars; b++) {
+      // 0/1 小节原样重复，2 小节上行模进，3 小节回落回答
+      var trans = 0;
+      if (b % 4 === 2) trans = rng.pick([1, -1, 0, 2]);
+      else if (b % 4 === 3) trans = rng.pick([0, 0, -1, 1]);
+      var cell = barA;
+      if (b > 0 && rng.chance(0.14)) {
+        cell = barA.map(function (n) { return { t: n.t, deg: n.deg, vel: n.vel }; });
+        if (cell.length) cell[cell.length - 1].deg += rng.pick([1, -1]);
+      }
+      for (var c = 0; c < cell.length; c++) {
+        var d = U.clamp(cell[c].deg + trans, minDeg, maxDeg);
+        var m = degreeMidiInRange(style.rootPc, style.scaleId, d, layer.low, layer.high);
         notes.push({
-          t: b * 4 + tpl[k],
-          deg: deg,
-          vel: (tpl[k] % 2 === 0 ? 0.8 : 0.65) * (0.9 + rng.next() * 0.15)
+          t: b * 4 + cell[c].t,
+          deg: nearestDeg(style.rootPc, style.scaleId, m),
+          vel: cell[c].vel * (b % 4 === 2 ? 1.03 : 1)
         });
       }
     }
@@ -5318,8 +5350,8 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
 
   function varyMotif(motif, bars, rng, style, layer) {
     var out = motif.notes.map(function (n) { return { t: n.t, deg: n.deg, vel: n.vel }; });
-    var trans = rng.pick([0, 0, 1, -1, 2, -2]);
-    if (rng.chance(0.35)) {
+    var trans = rng.pick([0, 0, 0, 1, -1, 2]);
+    if (rng.chance(0.2)) {
       // 只重复前两小节
       out = out.filter(function (n) { return n.t < bars * 2 - 0.05; });
     }
@@ -5360,7 +5392,7 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
     var phraseBars = song.meta.bpm < 80 ? 4 : 4;
     var prevMidi = null;
 
-    song.sections.forEach(function (sec) {
+    song.sections.forEach(function (sec, si) {
       var total = sec.bars;
       var phraseCount = Math.max(1, Math.ceil(total / phraseBars));
       for (var p = 0; p < phraseCount; p++) {
@@ -5369,7 +5401,8 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
         if (bars <= 0) continue;
         var inten = barIntensity(song, startBar);
         if (inten < layer.minIntensity) continue;
-        if (!motif || rng.chance(0.3)) motif = makeMotif(bars, layer, style, rng, template);
+        var newSectionHook = si > 0 && p === 0 && rng.chance(0.55);
+        if (!motif || newSectionHook || rng.chance(0.12)) motif = makeMotif(bars, layer, style, rng, template);
         else motif = varyMotif(motif, bars, rng, style, layer);
 
         var mnotes = motif.notes.slice();
@@ -5682,6 +5715,122 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
     return song;
   }
 
+  /* ---------------- 抓耳度评分 / 多候选 ---------------- */
+  function phraseRhythmScore(notes, bars) {
+    var phrases = [];
+    for (var s = 0; s < bars; s += 4) {
+      var sig = [];
+      notes.forEach(function (n) {
+        if (n.t >= s * 4 - 0.01 && n.t < (s + 4) * 4) sig.push((n.t - s * 4).toFixed(2));
+      });
+      if (sig.length) phrases.push(sig.join(','));
+    }
+    if (phrases.length < 2) return 0.5;
+    var counts = {};
+    var max = 0;
+    phrases.forEach(function (p) {
+      counts[p] = (counts[p] || 0) + 1;
+      if (counts[p] > max) max = counts[p];
+    });
+    return max / phrases.length;
+  }
+
+  function scoreSong(song) {
+    var lead = null;
+    song.parts.forEach(function (p) {
+      if (p.role === 'lead' && p.notes.length && !lead) lead = p;
+    });
+    if (!lead || lead.notes.length < 4) return 0;
+    var notes = lead.notes;
+    var bars = song.meta.bars;
+    var perBar = notes.length / bars;
+    var score = 50;
+
+    // 旋律密度：太稀或太满都不容易记住
+    score += 10 * (1 - Math.min(1, Math.abs(perBar - 2.2) / 1.8));
+
+    var min = Infinity, max = -Infinity;
+    var steps = 0, leaps = 0, intervals = 0;
+    for (var i = 0; i < notes.length; i++) {
+      if (notes[i].midi < min) min = notes[i].midi;
+      if (notes[i].midi > max) max = notes[i].midi;
+      if (i > 0) {
+        var diff = Math.abs(notes[i].midi - notes[i - 1].midi);
+        intervals++;
+        if (diff <= 2) steps++;
+        else if (diff >= 5) leaps++;
+      }
+    }
+    var range = max - min;
+    if (range >= 7 && range <= 19) score += 7;
+    else score -= Math.min(12, Math.abs(range - 13) * 1.2);
+
+    var stepRatio = steps / Math.max(1, intervals);
+    score += (stepRatio - 0.55) * 16;
+    score -= (leaps / Math.max(1, intervals)) * 4;
+
+    var strongN = 0, strongChord = 0;
+    var off = 0;
+    notes.forEach(function (n) {
+      var beat = ((n.t % 4) + 4) % 4;
+      if (beat < 0.02 || Math.abs(beat - 2) < 0.02) {
+        strongN++;
+        var ch = chordAtBeat(song, n.t);
+        if (ch && T.isChordTone(n.midi, ch)) strongChord++;
+      }
+      if (beat % 1 > 0.12) off++;
+    });
+    var strongRatio = strongChord / Math.max(1, strongN);
+    score += (strongRatio - 0.5) * 14;
+
+    var offRatio = off / notes.length;
+    if (offRatio >= 0.12 && offRatio <= 0.45) score += 5;
+    else score -= Math.abs(offRatio - 0.25) * 10;
+
+    // 4 小节乐句节奏重复度：hook 的“洗脑”核心
+    var rhythmSim = phraseRhythmScore(notes, bars);
+    score += (rhythmSim - 0.35) * 28;
+
+    var last = notes[notes.length - 1];
+    var lastChord = chordAtBeat(song, last.t);
+    if (lastChord && T.isChordTone(last.midi, lastChord)) score += 4;
+    if (lastChord && T.mod12(last.midi) === lastChord.rootPc) score += 3;
+
+    var longNotes = notes.filter(function (n) { return n.d >= 0.9; }).length;
+    if (longNotes / notes.length >= 0.22) score += 3;
+
+    if (perBar > 4.2) score -= (perBar - 4.2) * 4;
+    if (perBar < 1.1) score -= (1.1 - perBar) * 8;
+
+    return Math.round(U.clamp(score, 0, 100));
+  }
+
+  function generateBest(params, count) {
+    params = params || {};
+    count = Math.max(1, Math.min(16, count || 8));
+    var baseSeed = params.seed === undefined ? (Date.now() % 100000) : params.seed;
+    var best = null, bestScore = -1, bestSeed = baseSeed;
+    for (var i = 0; i < count; i++) {
+      var p = {};
+      for (var k in params) if (Object.prototype.hasOwnProperty.call(params, k)) p[k] = params[k];
+      p.seed = String(baseSeed) + '-c' + (i + 1);
+      var candidate = generate(p);
+      var sc = scoreSong(candidate);
+      candidate.meta.quality = sc;
+      if (sc > bestScore) {
+        best = candidate;
+        bestScore = sc;
+        bestSeed = p.seed;
+      }
+    }
+    best.meta.baseSeed = baseSeed;
+    best.meta.bestOf = count;
+    best.meta.candidates = count;
+    best.meta.seed = bestSeed;
+    best.meta.quality = bestScore;
+    return best;
+  }
+
   /* 换风格时保留和声骨架（可选） */
   function restyle(song, newStyleId, opts) {
     opts = opts || {};
@@ -5706,6 +5855,8 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
 
   GBG.composer = {
     generate: generate,
+    generateBest: generateBest,
+    scoreSong: scoreSong,
     restyle: restyle,
     sectionAtBar: sectionAtBar,
     barIntensity: barIntensity,
@@ -8064,9 +8215,13 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
   function regenerate(opts) {
     opts = opts || {};
     var params = readParams();
+    var useBest = !!opts.best;
+    var candidateCount = opts.candidates || 8;
     var song;
     try {
-      song = GBG.composer.generate(params);
+      song = useBest
+        ? GBG.composer.generateBest(params, candidateCount)
+        : GBG.composer.generate(params);
     } catch (e) {
       console.error(e);
       toast('生成失败：' + e.message);
@@ -8091,13 +8246,18 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
     roll.setSong(song);
 
     $('songTitle').value = song.meta.title;
+    $('seed').value = String(song.meta.seed);
     setSeg('intensitySeg', state.intensity);
     setSeg('formSeg', state.form);
     setSeg('barsSeg', state.bars);
     renderAll();
     autosaveLast();
     updateHash();
-    if (!opts.silent) toast('已生成 · ' + song.meta.title + ' · ' + song.stats.notes + ' 音符');
+    if (!opts.silent) {
+      toast(useBest
+        ? '🏆 精选 ' + song.meta.bestOf + ' 选 1 · 抓耳分 ' + song.meta.quality
+        : '已生成 · ' + song.meta.title + ' · ' + song.stats.notes + ' 音符');
+    }
   }
 
   function renderAll() {
@@ -8798,10 +8958,10 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
     });
 
     $('btnGenerate').addEventListener('click', function () { regenerate(); });
+    $('btnBest').addEventListener('click', function () { regenerate({ best: true, candidates: 8 }); });
     $('btnVariation').addEventListener('click', function () {
       $('seed').value = String(Math.floor(Math.random() * 90000) + 10000);
-      regenerate();
-      toast('已变奏 · 新种子 ' + $('seed').value);
+      regenerate({ best: true, candidates: 8 });
     });
     $('btnSeed').addEventListener('click', function () {
       $('seed').value = String(Math.floor(Math.random() * 90000) + 10000);
@@ -8972,6 +9132,10 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
         setRefStatus('请先粘贴音频直链', true);
         return;
       }
+      if (/^https?:\/\/(www\.)?pixabay\.com\//i.test(url)) {
+        setRefStatus('Pixabay 页面有 Cloudflare 防护，且官方 API 只支持图片/视频，浏览器无法直接抓取音乐。请在该页下载 MP3，再拖入上方文件框。', true);
+        return;
+      }
       setRefStatus('正在下载参考音频…');
       fetch(url, { mode: 'cors' }).then(function (res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -9031,7 +9195,8 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
         e.preventDefault();
         togglePlay();
       } else if (e.key === 'g' || e.key === 'G') {
-        regenerate();
+        if (e.shiftKey) regenerate({ best: true, candidates: 8 });
+        else regenerate();
       } else if (e.key === 'r' || e.key === 'R') {
         randomSong();
       } else if (e.key === 'Escape') {
@@ -9114,7 +9279,7 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
     setSeg('barsSeg', state.bars);
     ui.renderStyleGrid($('styleGrid'), state.family, state.styleId);
     ui.renderStyleDetail($('styleDetail'), pick);
-    regenerate();
+    regenerate({ best: true, candidates: 8 });
   }
 
   /* ---------------- 启动 ---------------- */
