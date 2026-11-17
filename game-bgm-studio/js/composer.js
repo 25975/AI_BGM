@@ -299,6 +299,7 @@
           extraByIntensity[lv].forEach(function (r) { if (roles.indexOf(r) === -1) roles.push(r); });
         }
       });
+      var sectionStart = song.sections.some(function (s) { return s.startBar === bar; });
 
       roles.forEach(function (role) {
         var mask = conf.steps[role];
@@ -306,12 +307,18 @@
         var isBase = baseRoles.indexOf(role) !== -1;
         var hits = U.parseSteps(mask);
         hits.forEach(function (h) {
+          // 管弦镲片只保留 4 小节一次 / 段落起点，避免高频“散声”铺满
+          if (style.family === 'orchestral' && role === 'crash') {
+            if (h.step !== 0) return;
+            if (!sectionStart && bar % 4 !== 0) return;
+          }
           if (!isBase && h.vel < 0.7 && !rng.chance(density)) return;
           if (isBase && h.vel < 0.5 && rng.chance(0.3)) return;
           var t = bar * BEATS_PER_BAR + h.step * 0.25;
           t = swingBeat(t, role === 'hat' || role === 'ride' ? swing : swing * 0.5);
           t += Math.abs(human(rng, 0.008));
           var vel = h.vel * (0.9 + rng.next() * 0.18);
+          if (role === 'crash' && style.family === 'orchestral') vel *= 0.65;
           var drum = kit[role] || role;
           part.notes.push({
             t: t,
@@ -344,14 +351,11 @@
         }
       }
 
-      // 强度 3：段落起点加入冲击
-      if (inten >= 3 && bar > 0) {
-        var isSectionStart = song.sections.some(function (s) { return s.startBar === bar; });
-        if (isSectionStart) {
-          var boom = kit.crash || kit.ride || kit.openhat || kit.metal;
-          if (boom) {
-            part.notes.push({ t: bar * 4, d: 0.1, midi: 0, vel: 0.95, drum: boom, drumRole: 'crash', layer: 'drums' });
-          }
+      // 强度 3：非 4 小节网格的段落起点补一记冲击（避免与常规镲片叠加）
+      if (inten >= 3 && bar > 0 && sectionStart && bar % 4 !== 0) {
+        var boom = kit.crash || kit.ride || kit.openhat || kit.metal;
+        if (boom) {
+          part.notes.push({ t: bar * 4, d: 0.1, midi: 0, vel: 0.7, drum: boom, drumRole: 'crash', layer: 'drums' });
         }
       }
     }

@@ -82,7 +82,7 @@
         steps: {
           kick: 'X...X...X...X...',
           snare: '....x.......x...',
-          hat: 'x.x.x.x.x.x.x.x.',
+          hat: 'x...x...x...x...',
           taiko: 'X..x..X...x..X..',
           tom: '..............x.',
           crash: 'X...............'
@@ -151,7 +151,7 @@
         steps: {
           kick: 'X.x.X.x.X.x.X.x.',
           snare: '....X.......X...',
-          hat: 'x.x.x.x.x.x.x.x.',
+          hat: 'x...x...x...x...',
           taiko: 'X.....x.X.....x.',
           crash: 'X...........X...',
           tom: '..............xx'

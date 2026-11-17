@@ -131,6 +131,15 @@
     ok(drums3.notes.length > 0, '强度 3 鼓组回归', drums3.notes.length);
     out.details.intensity = { drums0: 0, drums3: drums3.notes.length };
 
+    /* ---- 7b. 管弦镲片不过密 ---- */
+    const crashSong = G.composer.generate({
+      styleId: 'triumph', seed: 'crash-test', bars: 16, intensity: 3, clarity: 0.55
+    });
+    const crashDrums = crashSong.parts.filter(p => p.id === 'drums')[0];
+    const crashNotes = crashDrums ? crashDrums.notes.filter(n => n.drumRole === 'crash') : [];
+    ok(crashNotes.length <= 6, '管弦镲片不过密', crashNotes.length);
+    out.details.crash = { notes: crashNotes.length, bars: 16 };
+
     /* ---- 8. 静音混音 ---- */
     LF.state.mix.mute.drums = true;
     LF.engine.setMix(LF.state.mix);

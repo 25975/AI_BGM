@@ -691,19 +691,19 @@
     orchSnare: { name: '军鼓', kind: 'snare', f: 190, decay: 0.24, gain: 0.6, noise: 0.8, bp: 2200 },
     taiko:     { name: '太鼓', kind: 'tom', f: [150, 70], decay: 0.62, gain: 0.92, noise: 0.4, lp: 740 },
     tom:       { name: '嗵鼓', kind: 'tom', f: [200, 110], decay: 0.35, gain: 0.7, noise: 0.3, lp: 1300 },
-    crash:     { name: '镲片', kind: 'cymbal', decay: 2.15, gain: 0.4, hp: 3200, noise: 1 },
+    crash:     { name: '镲片', kind: 'cymbal', decay: 2.2, gain: 0.3, bp: 5000, f: 520, noise: 1 },
     /* 电子 */
     kick909:   { name: '909 底鼓', kind: 'kick', f: [180, 50], decay: 0.34, gain: 1, click: 0.4, noise: 0.2 },
     snare909:  { name: '909 军鼓', kind: 'snare', f: 200, decay: 0.18, gain: 0.62, noise: 0.8, bp: 1800 },
     clap:      { name: '拍手', kind: 'clap', decay: 0.16, gain: 0.6, bp: 1400 },
-    hat909:    { name: '闭镲', kind: 'hat', decay: 0.045, gain: 0.34, hp: 8000 },
-    openHat:   { name: '开镲', kind: 'hat', decay: 0.3, gain: 0.3, hp: 7000 },
-    ride909:   { name: '叮叮镲', kind: 'cymbal', decay: 0.5, gain: 0.24, hp: 5000, noise: 1 },
+    hat909:    { name: '闭镲', kind: 'hat', decay: 0.045, gain: 0.3, bp: 8500 },
+    openHat:   { name: '开镲', kind: 'hat', decay: 0.3, gain: 0.26, bp: 8000 },
+    ride909:   { name: '叮叮镲', kind: 'cymbal', decay: 0.5, gain: 0.22, bp: 5600, f: 620, noise: 1 },
     rimshot:   { name: '边击', kind: 'wood', f: 880, decay: 0.07, gain: 0.4 },
     /* 柔和 */
     kickSoft:  { name: '柔底鼓', kind: 'kick', f: [120, 46], decay: 0.45, gain: 0.7, click: 0.1, noise: 0.1 },
     snap:      { name: '响指', kind: 'clap', decay: 0.12, gain: 0.5, bp: 2000 },
-    hatSoft:   { name: '柔闭镲', kind: 'hat', decay: 0.04, gain: 0.26, hp: 7500 },
+    hatSoft:   { name: '柔闭镲', kind: 'hat', decay: 0.04, gain: 0.24, bp: 8000 },
     brush:     { name: '鼓刷', kind: 'snare', f: 170, decay: 0.2, gain: 0.34, noise: 1, bp: 2600 },
     /* 鼓打贝斯 */
     kickPunch: { name: '冲击底鼓', kind: 'kick', f: [200, 55], decay: 0.28, gain: 1, click: 0.55, noise: 0.15 },
@@ -718,7 +718,7 @@
     woodblock: { name: '木鱼', kind: 'wood', f: 1200, decay: 0.06, gain: 0.35 },
     gong:      { name: '锣', kind: 'gong', decay: 3.2, gain: 0.4, noise: 0.8 },
     djembe:    { name: '金贝鼓', kind: 'tom', f: [180, 78], decay: 0.3, gain: 0.75, noise: 0.4, lp: 1200 },
-    shaker:    { name: '沙锤', kind: 'noiseHat', decay: 0.07, gain: 0.22, hp: 5000, bp: 0 },
+    shaker:    { name: '沙锤', kind: 'noiseHat', decay: 0.07, gain: 0.16, bp: 4800 },
     tambourine:{ name: '铃鼓', kind: 'noiseHat', decay: 0.14, gain: 0.24, hp: 6500 },
     /* 爵士 */
     rideJazz:  { name: '爵士叮叮镲', kind: 'cymbal', decay: 0.75, gain: 0.2, hp: 4200, noise: 1 },
@@ -1144,7 +1144,7 @@
     var g = d.gain * (0.25 + 0.75 * vel);
     var dur = opts.dur || 0;
 
-    function noiseLayer(decay, type, freq, q, amt) {
+    function noiseLayer(decay, type, freq, q, amt, lpFreq) {
       var ns = ctx.createBufferSource();
       ns.buffer = noiseBuffer(ctx);
       ns.loop = true;
@@ -1155,7 +1155,18 @@
       var ng = ctx.createGain();
       ng.gain.setValueAtTime(g * amt, t0);
       ng.gain.setTargetAtTime(0.0001, t0, Math.max(0.008, decay / 3));
-      ns.connect(nf); nf.connect(ng); ng.connect(out);
+      ns.connect(nf);
+      if (lpFreq) {
+        var lp = ctx.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = lpFreq;
+        lp.Q.value = 0.5;
+        nf.connect(lp);
+        lp.connect(ng);
+      } else {
+        nf.connect(ng);
+      }
+      ng.connect(out);
       ns.start(t0); ns.stop(t0 + decay * 2 + 0.05);
       sources.push(ns);
       return nf;
@@ -1232,24 +1243,24 @@
         break;
       }
       case 'hat': {
-        noiseLayer(d.decay, 'highpass', d.hp || 8000, 0.5, 1);
+        noiseLayer(d.decay, 'bandpass', d.bp || 8200, 1.1, 0.72, 12000);
         break;
       }
       case 'noiseHat': {
-        if (d.bp) noiseLayer(d.decay, 'bandpass', d.bp, 1, 1);
-        else noiseLayer(d.decay, 'highpass', d.hp || 5000, 0.5, 1);
+        if (d.bp) noiseLayer(d.decay, 'bandpass', d.bp, 1.15, 0.72, 11000);
+        else noiseLayer(d.decay, 'highpass', d.hp || 5000, 0.5, 0.72, 10000);
         break;
       }
       case 'cymbal': {
-        noiseLayer(d.decay, 'highpass', d.hp || 4000, 0.4, 1);
-        var mt = ctx.createOscillator();
-        mt.type = 'square'; mt.frequency.value = 520;
-        var mtg = ctx.createGain();
-        mtg.gain.setValueAtTime(g * 0.05, t0);
-        mtg.gain.setTargetAtTime(0.0001, t0, d.decay / 4);
-        mt.connect(mtg); mtg.connect(out);
-        mt.start(t0); mt.stop(t0 + d.decay + 0.1);
-        sources.push(mt);
+        // 金属泛音 + 带通噪声，而不是一整片 4kHz 以上的白噪“散声”
+        noiseLayer(d.decay, 'bandpass', d.bp || 5200, 0.75, 0.55, 11000);
+        var ratios = [1, 1.41, 1.73, 2.17, 2.93, 3.71, 4.61];
+        var base = d.f || 540;
+        ratios.forEach(function (p, idx) {
+          tone(base * p, d.decay / (1 + idx * 0.28), 0.06 / (idx + 1), idx % 2 ? 'triangle' : 'sine');
+        });
+        // 鼓棒接触的短瞬态
+        noiseLayer(0.02, 'bandpass', 6800, 1.3, 0.3, 12000);
         break;
       }
       case 'wood': {
