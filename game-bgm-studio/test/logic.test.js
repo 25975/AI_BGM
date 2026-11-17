@@ -61,6 +61,9 @@ const sig = s => s.parts.map(p => p.notes.map(n => n.midi + '@' + n.t.toFixed(3)
 check(sig(a) === sig(b), '同种子结果不一致');
 const c = composer.generate({ styleId: 'cyberpunk', seed: 12346, bars: 32 });
 check(sig(a) !== sig(c), '不同种子结果相同');
+const structSig = s => s.sections.map(x => x.kind + ':' + x.bars).join(',') + '|' +
+  s.chords.map(x => x.rootPc + ':' + x.quality).join(',');
+check(structSig(a) !== structSig(c), '不同种子结构/和声没有差异');
 
 // 强度分层
 for (const inten of [0, 1, 2, 3]) {

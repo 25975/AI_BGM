@@ -4123,8 +4123,11 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
     }
 
     if (form === 'loop') {
-      if (totalBars >= 32) {
-        var half = Math.round(totalBars / 2 / 4) * 4;
+      if (totalBars >= 16) {
+        // 种子决定 A/B 段切分，改变强度弧线与配器进入点
+        var splits = [];
+        for (var sp = 8; sp <= totalBars - 8; sp += 4) splits.push(sp);
+        var half = splits.length ? rng.pick(splits) : Math.round(totalBars / 2 / 4) * 4;
         push('loopA', half);
         push('loopB', totalBars - half);
       } else {
@@ -4200,20 +4203,19 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
     if (meta.complexity < 0.3 && ext > 0) ext -= 1;
 
     var pool = style.progs.slice();
-    var progIndex = 0;
+    var baseProg = rng.pick(pool);
     var prevVoicing = null;
     song.chords = [];
     song.chordByBar = [];
 
     for (var si = 0; si < song.sections.length; si++) {
       var sec = song.sections[si];
-      var prog = T.progressionById(pool[si % pool.length] || pool[0]);
-      // 段落切换时偶尔换一个进行
-      if (si > 0 && rng.chance(0.45)) {
-        prog = T.progressionById(rng.pick(pool));
-      }
+      var progId = si === 0 ? baseProg : (rng.chance(0.6) ? rng.pick(pool) : baseProg);
+      var prog = T.progressionById(progId);
+      // 种子决定从进行的哪一拍开始；一半概率保持主和弦起拍
+      var slotOffset = rng.chance(0.55) ? 0 : rng.int(prog.degs.length);
       for (var b = sec.startBar; b < sec.startBar + sec.bars; b += barsPerChord) {
-        var slot = Math.floor((b - sec.startBar) / barsPerChord) % prog.degs.length;
+        var slot = (Math.floor((b - sec.startBar) / barsPerChord) + slotOffset) % prog.degs.length;
         var deg = prog.degs[slot];
         var opts = { extension: ext };
         // 段尾属和弦强化
@@ -4264,6 +4266,8 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
     var baseRoles = ['kick', 'snare'];
     var extraByIntensity = conf.intensity || {};
     var fillEvery = conf.fillEvery || 8;
+    if (rng.chance(0.35)) fillEvery = 8;
+    var crashPhase = rng.int(4);
     var swing = style.swing || 0;
     var density = song.meta.density;
 
@@ -4290,8 +4294,10 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
           // 管弦镲片只保留 4 小节一次 / 段落起点，避免高频“散声”铺满
           if (style.family === 'orchestral' && role === 'crash') {
             if (h.step !== 0) return;
-            if (!sectionStart && bar % 4 !== 0) return;
+            if (!sectionStart && bar % 4 !== crashPhase) return;
           }
+          // 少量随机留白，避免每次都是同一张鼓谱
+          if (role === 'hat' && style.family === 'orchestral' && rng.chance(0.08)) return;
           if (!isBase && h.vel < 0.7 && !rng.chance(density)) return;
           if (isBase && h.vel < 0.5 && rng.chance(0.3)) return;
           var t = bar * BEATS_PER_BAR + h.step * 0.25;
@@ -4316,7 +4322,7 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
       var isFill = (bar + 1) % fillEvery === 0 && inten >= 1 && bar < song.meta.bars - 1;
       if (isFill && conf.fillType) {
         var fillDrum = kit[conf.fillType] || conf.fillType;
-        var n = inten >= 2 ? 4 : 2;
+        var n = inten >= 2 ? rng.pick([3, 4, 5]) : 2;
         for (var f = 0; f < n; f++) {
           var step = 16 - n + f;
           part.notes.push({
@@ -4708,12 +4714,25 @@ window.GBG_SAMPLE_META = {"source":"https://github.com/gleitz/midi-js-soundfonts
       var n = Math.round(BEATS_PER_BAR / step);
       var i;
       if (layer.pattern === 'arp16' || layer.pattern === 'arp8') {
-        for (i = 0; i < n; i++) order.push(i);
+        // 种子决定上行 / 下行 / 上下行，音型轮廓会明显不同
+        var dir = rng.pick(['up', 'down', 'updown']);
+        if (dir === 'down') {
+          for (i = 0; i < n; i++) order.push(n - 1 - i);
+        } else if (dir === 'updown') {
+          var seq = [];
+          for (i = 0; i < n; i++) seq.push(i);
+          for (i = n - 2; i > 0; i--) seq.push(i);
+          for (i = 0; i < n; i++) order.push(seq[i % seq.length]);
+        } else {
+          for (i = 0; i < n; i++) order.push(i);
+        }
       } else if (layer.pattern === 'arpUpDown') {
         var updown = tones.concat(tones.slice(1, -1).reverse());
         for (i = 0; i < n; i++) order.push(i % updown.length);
       } else if (layer.pattern === 'ostinato16') {
         var cell = [0, 2, 1, 3, 0, 2, 3, 1];
+        var rot = rng.int(cell.length);
+        cell = cell.slice(rot).concat(cell.slice(0, rot));
         for (i = 0; i < n; i++) order.push(cell[i % cell.length]);
       } else {
         // broken：低音 + 上方三音交替
