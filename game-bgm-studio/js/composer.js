@@ -272,9 +272,12 @@
     var style = song.style;
     var conf = style.drums;
     var kit = GBG.instruments.kits[conf.kit] || GBG.instruments.kits.orch;
+    // 管弦鼓组让位给弦乐/铜管/人声，避免低频压住整个混音
+    var drumGain = style.family === 'orchestral' ? 0.3 :
+      (style.family === 'chiptune' ? 0.3 : 0.35);
     var part = {
       id: 'drums', name: '鼓组', role: 'drums', instrument: 'kit:' + conf.kit,
-      pattern: 'kit', gain: 0.39, pan: 0, muted: false, solo: false,
+      pattern: 'kit', gain: drumGain, pan: 0, muted: false, solo: false,
       color: ROLE_COLORS.drums, notes: [], minIntensity: 0, kind: 'drums'
     };
 

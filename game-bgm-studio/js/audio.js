@@ -17,35 +17,67 @@
 
   /* ---------------- 混响 IR ---------------- */
   var irCache = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
-  function makeIR(ctx, seconds, decay) {
-    if (irCache && irCache.has(ctx)) return irCache.get(ctx);
+  function makeIR(ctx, seconds, decay, opts) {
+    opts = opts || {};
+    var preDelay = opts.preDelay === undefined ? 0.028 : opts.preDelay;
+    var damping = opts.damping === undefined ? 0.55 : opts.damping;
+    var key = seconds.toFixed(2) + '|' + decay.toFixed(2) + '|' + preDelay.toFixed(3) + '|' + damping.toFixed(2);
+    var store = null;
+    if (irCache) {
+      store = irCache.get(ctx);
+      if (!store) { store = {}; irCache.set(ctx, store); }
+      if (store[key]) return store[key];
+    }
     var sr = ctx.sampleRate;
-    var len = Math.max(1, Math.floor(sr * seconds));
+    var pre = Math.floor(preDelay * sr);
+    var len = Math.max(pre + 1, pre + Math.floor(seconds * sr));
     var buf = ctx.createBuffer(2, len, sr);
+    var baseSeed = opts.seed || 0x9e3779b9;
     for (var ch = 0; ch < 2; ch++) {
       var d = buf.getChannelData(ch);
+      var seed = (baseSeed + ch * 0x85ebca6b) >>> 0;
+      function rnd() {
+        seed = (seed * 1664525 + 1013904223) >>> 0;
+        return seed / 4294967296 * 2 - 1;
+      }
       var lp = 0;
-      for (var i = 0; i < len; i++) {
-        var t = i / len;
-        var env = Math.pow(1 - t, 2.0) * Math.exp(-t * 2.6);
-        var n = Math.random() * 2 - 1;
-        lp = lp * 0.72 + n * 0.28; // 高频收敛，听感更暖
+      var taps = [];
+      for (var k = 0; k < 9; k++) {
+        taps.push({
+          pos: Math.floor((0.008 + Math.pow(k / 9, 0.8) * 0.075 + rnd() * 0.008) * sr),
+          gain: (0.16 + rnd() * 0.18) * Math.pow(0.82, k),
+          sign: rnd() < 0 ? -1 : 1
+        });
+      }
+      for (var i = pre; i < len; i++) {
+        var t = (i - pre) / (len - pre);
+        var n = rnd();
+        // 高频随时间更快衰减，模拟音乐厅的空气与软装吸收
+        var coef = 0.25 + (1 - Math.exp(-t * 2.8)) * damping;
+        lp = lp * coef + n * (1 - coef);
+        var env = Math.exp(-t * decay) * Math.pow(1 - t, 1.15);
         d[i] = lp * env;
       }
-      // 早期反射
-      var taps = ch === 0 ? [0.009, 0.017, 0.027, 0.041] : [0.012, 0.021, 0.033, 0.047];
-      taps.forEach(function (tp, idx) {
-        var pos = Math.floor(tp * sr);
-        if (pos < len) d[pos] += (idx % 2 ? -1 : 1) * 0.25 * Math.pow(0.75, idx);
+      taps.forEach(function (tap) {
+        var pos = pre + tap.pos;
+        if (pos < len) d[pos] += tap.sign * tap.gain;
       });
     }
-    if (irCache) irCache.set(ctx, buf);
+    if (store) store[key] = buf;
     return buf;
   }
 
   /* 按声部做频率分工：清晰度越高，垫音/琶音让出越多低频 */
   function partEQ(ctx, part, clarity) {
     var c = clarity || 0;
+    // 管弦鼓组切掉一点 100Hz 以下的“轰”，保留鼓皮冲击与镲片
+    if (part.role === 'drums' && /^kit:(orch|battle)$/.test(part.instrument || '')) {
+      var drumEq = ctx.createBiquadFilter();
+      drumEq.type = 'lowshelf';
+      drumEq.frequency.value = 105;
+      drumEq.gain.value = -3.5;
+      return drumEq;
+    }
     if (c < 0.03) return null;
     var role = part.role;
     var hp = 0;
@@ -64,6 +96,27 @@
     return f;
   }
 
+  /* 立体声宽度：用 M/S 矩阵把管弦声场拉开，避免所有声部挤在中间 */
+  function stereoWidth(ctx, value) {
+    if (!ctx.createChannelSplitter || !ctx.createChannelMerger) return null;
+    var w = U.clamp(0.85 + (value === undefined ? 0.9 : value) * 0.45, 0.9, 1.3);
+    if (Math.abs(w - 1) < 0.001) return null;
+    var input = ctx.createGain();
+    var split = ctx.createChannelSplitter(2);
+    var merge = ctx.createChannelMerger(2);
+    var ll = ctx.createGain(), lr = ctx.createGain(), rl = ctx.createGain(), rr = ctx.createGain();
+    ll.gain.value = (1 + w) / 2;
+    rr.gain.value = (1 + w) / 2;
+    lr.gain.value = (1 - w) / 2;
+    rl.gain.value = (1 - w) / 2;
+    input.connect(split);
+    split.connect(ll, 0); ll.connect(merge, 0, 0);
+    split.connect(lr, 0); lr.connect(merge, 0, 1);
+    split.connect(rl, 1); rl.connect(merge, 0, 0);
+    split.connect(rr, 1); rr.connect(merge, 0, 1);
+    return { input: input, output: merge };
+  }
+
   /* ---------------- 图构建 ---------------- */
   function buildGraph(ctx, song, opts) {    opts = opts || {};
     var bpm = song.meta.bpm;
@@ -76,36 +129,64 @@
     // 低频清理，避免次低频占用动态余量
     var rumbleHP = ctx.createBiquadFilter();
     rumbleHP.type = 'highpass';
-    rumbleHP.frequency.value = 30;
+    rumbleHP.frequency.value = 32;
     rumbleHP.Q.value = 0.7;
 
+    // 低中频稍微让位，减少“糊”和廉价感
+    var mud = ctx.createBiquadFilter();
+    mud.type = 'peaking';
+    mud.frequency.value = 260;
+    mud.Q.value = 0.9;
+    mud.gain.value = -1.2;
+
     var glue = ctx.createDynamicsCompressor();
-    glue.threshold.value = -16;
-    glue.knee.value = 14;
-    glue.ratio.value = 3;
-    glue.attack.value = 0.006;
-    glue.release.value = 0.22;
+    glue.threshold.value = -18;
+    glue.knee.value = 12;
+    glue.ratio.value = 2.2;
+    glue.attack.value = 0.02;
+    glue.release.value = 0.25;
+
+    // 轻微磁带式饱和：给数字合成增加谐波，但管弦只保留极轻的染色
+    var shaper = ctx.createWaveShaper();
+    var curve = new Float32Array(2048);
+    var drive = style.family === 'orchestral' ? 0.35 : 0.8;
+    for (var ci = 0; ci < curve.length; ci++) {
+      var cx = (ci / (curve.length - 1)) * 2 - 1;
+      curve[ci] = Math.tanh(cx * drive) / drive;
+    }
+    shaper.curve = curve;
+    shaper.oversample = '2x';
 
     var limiter = ctx.createDynamicsCompressor();
-    limiter.threshold.value = -2.5;
+    limiter.threshold.value = -1.8;
     limiter.knee.value = 0;
     limiter.ratio.value = 20;
-    limiter.attack.value = 0.001;
-    limiter.release.value = 0.08;
+    limiter.attack.value = 0.002;
+    limiter.release.value = 0.1;
+
+    // 中高频存在感：让弦乐、铜管、人声从低频里浮出来
+    var presence = ctx.createBiquadFilter();
+    presence.type = 'peaking';
+    presence.frequency.value = 2800;
+    presence.Q.value = 0.8;
+    presence.gain.value = style.family === 'orchestral' ? 1.5 : 0.8;
 
     var master = ctx.createGain();
     master.gain.value = opts.masterGain === undefined ? masterLevel(style) : masterLevel(style) * opts.masterGain / 0.82;
 
-    dry.connect(rumbleHP);
+    dry.connect(mud);
+    mud.connect(rumbleHP);
     rumbleHP.connect(glue);
-    glue.connect(limiter);
+    glue.connect(shaper);
+    shaper.connect(presence);
+    presence.connect(limiter);
 
     // 风格化总线滤波（Lo-Fi 暖度）
     var tone = null;
     var air = ctx.createBiquadFilter();
     air.type = 'highshelf';
     air.frequency.value = 7000;
-    air.gain.value = style.lowpass ? 0.5 : 1.6;
+    air.gain.value = style.lowpass ? 0.2 : (style.family === 'orchestral' ? 0.8 : 1.2);
     limiter.connect(air);
     if (style.lowpass) {
       tone = ctx.createBiquadFilter();
@@ -113,9 +194,14 @@
       tone.frequency.value = style.lowpass;
       tone.Q.value = 0.5;
       air.connect(tone);
-      tone.connect(master);
+    }
+    var preMaster = style.lowpass ? tone : air;
+    var widthNode = stereoWidth(ctx, style.width);
+    if (widthNode) {
+      preMaster.connect(widthNode.input);
+      widthNode.output.connect(master);
     } else {
-      air.connect(master);
+      preMaster.connect(master);
     }
     master.connect(ctx.destination);
 
@@ -127,32 +213,45 @@
       master.connect(analyser);
     }
 
-    // 混响
+    // 混响：按风格给不同长度与湿度，避免所有风格共用一块“金属板”
+    var revAmt = style.reverb === undefined ? 0.38 : style.reverb;
+    var revSec = opts.reverbSec || (1.65 + revAmt * 3.3);
+    var revDecay = 2.0 + (1 - revAmt) * 0.9;
     var conv = ctx.createConvolver();
     conv.normalize = true;
-    conv.buffer = makeIR(ctx, opts.reverbSec || 2.2, 2.6);
+    conv.buffer = makeIR(ctx, revSec, revDecay, {
+      preDelay: 0.026,
+      damping: style.family === 'orchestral' ? 0.62 : 0.48,
+      seed: 0x51ed270b
+    });
     var revHP = ctx.createBiquadFilter();
     revHP.type = 'highpass';
-    revHP.frequency.value = 170;
+    revHP.frequency.value = 180;
+    var revLP = ctx.createBiquadFilter();
+    revLP.type = 'lowpass';
+    revLP.frequency.value = 8800;
+    revLP.Q.value = 0.5;
     var revWet = ctx.createGain();
     // 清晰度越高，混响与延迟越收敛，避免声部被尾音糊在一起
     var clarity = (song.meta && song.meta.clarity) || 0;
-    revWet.gain.value = opts.noReverb ? 0 : 0.62 * (1 - 0.3 * clarity);
-    revHP.connect(conv);
+    revWet.gain.value = opts.noReverb ? 0 : revAmt * 1.15 * (1 - 0.25 * clarity);
+    revHP.connect(revLP);
+    revLP.connect(conv);
     conv.connect(revWet);
     revWet.connect(dry);
 
-    // 延迟（附点八分）
+    // 延迟（附点八分）：只留风格定义的少量空间感
     var delayInput = ctx.createGain();
     var delay = ctx.createDelay(3);
     delay.delayTime.value = U.clamp(spb * 0.75, 0.05, 2.5);
     var fb = ctx.createGain();
-    fb.gain.value = 0.34;
+    fb.gain.value = 0.24;
     var fbLP = ctx.createBiquadFilter();
     fbLP.type = 'lowpass';
-    fbLP.frequency.value = 3200;
+    fbLP.frequency.value = 2800;
     var dlyWet = ctx.createGain();
-    dlyWet.gain.value = 0.5 * (1 - 0.22 * clarity);
+    var dlyAmt = style.delay === undefined ? 0.1 : style.delay;
+    dlyWet.gain.value = dlyAmt * (1 - 0.2 * clarity);
     delayInput.connect(delay);
     delay.connect(fb);
     fb.connect(fbLP);
@@ -215,14 +314,14 @@
       node.input.gain.cancelScheduledValues(now);
       node.rev.gain.cancelScheduledValues(now);
       node.dly.gain.cancelScheduledValues(now);
-      if (immediate) {
+      if (immediate || !audible) {
         node.input.gain.value = audible ? g : 0;
         node.rev.gain.value = audible ? 1 : 0;
         node.dly.gain.value = audible ? 1 : 0;
       } else {
-        node.input.gain.setTargetAtTime(audible ? g : 0, now, 0.015);
-        node.rev.gain.setTargetAtTime(audible ? 1 : 0, now, 0.015);
-        node.dly.gain.setTargetAtTime(audible ? 1 : 0, now, 0.015);
+        node.input.gain.setTargetAtTime(g, now, 0.015);
+        node.rev.gain.setTargetAtTime(1, now, 0.015);
+        node.dly.gain.setTargetAtTime(1, now, 0.015);
       }
       if (audible) graph.audible[p.id] = true;
     });

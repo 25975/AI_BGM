@@ -243,21 +243,27 @@
 
     /* ===== 弦乐 / 铜管 ===== */
     strings: {
-      name: '弦乐组', group: 'strings', gain: 0.3, sendRev: 0.36, sendDly: 0.03,
-      env: { a: 0.28, d: 0.4, s: 0.85, r: 0.7 },
-      filt: { type: 'lowpass', freq: 2300, q: 0.6, env: { a: 0.2, d: 0.3, amt: 0.5, s: 0.8 } },
+      name: '弦乐组', group: 'strings', gain: 0.3, sendRev: 0.38, sendDly: 0.03,
+      env: { a: 0.38, d: 0.55, s: 0.88, r: 1.0 },
+      filt: { type: 'lowpass', freq: 2800, q: 0.55, env: { a: 0.2, d: 0.4, amt: 0.5, s: 0.85 } },
+      body: { freq: 320, q: 1, gain: 2.4 },
+      air: { amt: 0.012, freq: 3000, q: 0.55 },
       osc: [
-        { w: 'sawtooth', mul: 1, gain: 0.5, detune: -7 },
-        { w: 'sawtooth', mul: 1, gain: 0.5, detune: 7 },
-        { w: 'sawtooth', mul: 1, gain: 0.3, detune: 0 }
+        { w: 'sawtooth', mul: 1, gain: 0.3, detune: -11 },
+        { w: 'sawtooth', mul: 1, gain: 0.3, detune: 11 },
+        { w: 'sawtooth', mul: 1, gain: 0.18, detune: -4 },
+        { w: 'sawtooth', mul: 1, gain: 0.18, detune: 4 },
+        { w: 'triangle', mul: 0.5, gain: 0.08 }
       ],
-      vib: { rate: 4.8, depth: 5, delay: 0.4 },
-      spread: 0.6
+      vib: { rate: 4.6, depth: 5.5, delay: 0.5 },
+      spread: 0.7
     },
     stringsStacc: {
-      name: '弦乐断奏', group: 'strings', gain: 0.42, sendRev: 0.28, sendDly: 0.03,
-      env: { a: 0.012, d: 0.1, s: 0.32, r: 0.12 },
-      filt: { type: 'lowpass', freq: 3400, q: 0.7, env: { a: 0.004, d: 0.07, amt: 0.4, s: 0.7 } },
+      name: '弦乐断奏', group: 'strings', gain: 0.42, sendRev: 0.3, sendDly: 0.03,
+      env: { a: 0.012, d: 0.1, s: 0.32, r: 0.14 },
+      filt: { type: 'lowpass', freq: 3600, q: 0.65, env: { a: 0.004, d: 0.07, amt: 0.4, s: 0.7 } },
+      body: { freq: 380, q: 1, gain: 3 },
+      noise: { amt: 0.045, decay: 0.035, hp: 3200 },
       osc: [
         { w: 'sawtooth', mul: 1, gain: 0.5, detune: -6 },
         { w: 'sawtooth', mul: 1, gain: 0.5, detune: 6 },
@@ -267,32 +273,39 @@
       spread: 0.55
     },
     stringPad: {
-      name: '弦乐铺底', group: 'strings', gain: 0.28, sendRev: 0.42, sendDly: 0.03,
-      env: { a: 0.75, d: 0.6, s: 0.9, r: 1.4 },
-      filt: { type: 'lowpass', freq: 1600, q: 0.5, env: { a: 0.5, d: 0.5, amt: 0.5, s: 0.9 } },
+      name: '弦乐铺底', group: 'strings', gain: 0.28, sendRev: 0.44, sendDly: 0.03,
+      env: { a: 0.85, d: 0.8, s: 0.9, r: 1.6 },
+      filt: { type: 'lowpass', freq: 1800, q: 0.45, env: { a: 0.5, d: 0.5, amt: 0.5, s: 0.9 } },
+      body: { freq: 260, q: 0.9, gain: 2.1 },
+      air: { amt: 0.009, freq: 2300, q: 0.5 },
       osc: [
-        { w: 'sawtooth', mul: 1, gain: 0.45, detune: -11 },
-        { w: 'sawtooth', mul: 1, gain: 0.45, detune: 11 },
-        { w: 'sawtooth', mul: 0.5, gain: 0.25 }
+        { w: 'sawtooth', mul: 1, gain: 0.35, detune: -11 },
+        { w: 'sawtooth', mul: 1, gain: 0.35, detune: 11 },
+        { w: 'sawtooth', mul: 1, gain: 0.22, detune: 0 },
+        { w: 'sawtooth', mul: 0.5, gain: 0.2 }
       ],
-      vib: { rate: 4.2, depth: 4, delay: 0.8 },
+      vib: { rate: 4.2, depth: 4.5, delay: 0.8 },
       spread: 0.7
     },
     soloViolin: {
-      name: '小提琴', group: 'strings', gain: 0.34, sendRev: 0.32, sendDly: 0.04,
-      env: { a: 0.12, d: 0.3, s: 0.88, r: 0.35 },
-      filt: { type: 'lowpass', freq: 3200, q: 0.8 },
+      name: '小提琴', group: 'strings', gain: 0.34, sendRev: 0.35, sendDly: 0.04,
+      env: { a: 0.12, d: 0.3, s: 0.88, r: 0.4 },
+      filt: { type: 'lowpass', freq: 3600, q: 0.75 },
+      body: { freq: 520, q: 1, gain: 2.4 },
+      air: { amt: 0.008, freq: 2800, q: 0.5 },
       osc: [
         { w: 'sawtooth', mul: 1, gain: 0.7 },
-        { w: 'square', mul: 1, gain: 0.1, detune: 4 }
+        { w: 'square', mul: 1, gain: 0.08, detune: 4 }
       ],
       vib: { rate: 5.5, depth: 13, delay: 0.25 },
-      spread: 0.2
+      spread: 0.25
     },
     fiddle: {
-      name: '凯尔特小提琴', group: 'strings', gain: 0.34, sendRev: 0.3, sendDly: 0.04,
+      name: '凯尔特小提琴', group: 'strings', gain: 0.34, sendRev: 0.32, sendDly: 0.04,
       env: { a: 0.06, d: 0.25, s: 0.86, r: 0.3 },
-      filt: { type: 'lowpass', freq: 3400, q: 0.9 },
+      filt: { type: 'lowpass', freq: 3800, q: 0.85 },
+      body: { freq: 600, q: 1, gain: 2.2 },
+      air: { amt: 0.008, freq: 3200, q: 0.5 },
       osc: [
         { w: 'sawtooth', mul: 1, gain: 0.65 },
         { w: 'sawtooth', mul: 1, gain: 0.2, detune: 8 }
@@ -302,51 +315,60 @@
       spread: 0.3
     },
     cello: {
-      name: '大提琴', group: 'strings', gain: 0.36, sendRev: 0.3, sendDly: 0.03,
-      env: { a: 0.14, d: 0.35, s: 0.86, r: 0.5 },
-      filt: { type: 'lowpass', freq: 1400, q: 0.7 },
+      name: '大提琴', group: 'strings', gain: 0.36, sendRev: 0.33, sendDly: 0.03,
+      env: { a: 0.16, d: 0.4, s: 0.87, r: 0.6 },
+      filt: { type: 'lowpass', freq: 1600, q: 0.65 },
+      body: { freq: 180, q: 1, gain: 2.6 },
+      air: { amt: 0.01, freq: 1600, q: 0.5 },
       osc: [
-        { w: 'sawtooth', mul: 1, gain: 0.6 },
-        { w: 'sawtooth', mul: 0.5, gain: 0.25 },
-        { w: 'triangle', mul: 2, gain: 0.12 }
+        { w: 'sawtooth', mul: 1, gain: 0.55, detune: -7 },
+        { w: 'sawtooth', mul: 1, gain: 0.4, detune: 7 },
+        { w: 'sawtooth', mul: 0.5, gain: 0.22 },
+        { w: 'triangle', mul: 2, gain: 0.08 }
       ],
       vib: { rate: 4.6, depth: 7, delay: 0.3 },
-      spread: 0.3
+      spread: 0.35
     },
     brassSection: {
-      name: '铜管组', group: 'brass', gain: 0.34, sendRev: 0.3, sendDly: 0.04,
-      env: { a: 0.05, d: 0.3, s: 0.82, r: 0.35 },
-      filt: { type: 'lowpass', freq: 900, q: 0.9, env: { a: 0.06, d: 0.35, amt: 2.2, s: 0.55 } },
+      name: '铜管组', group: 'brass', gain: 0.34, sendRev: 0.34, sendDly: 0.04,
+      env: { a: 0.055, d: 0.35, s: 0.84, r: 0.45 },
+      filt: { type: 'lowpass', freq: 1150, q: 0.8, env: { a: 0.05, d: 0.32, amt: 2.0, s: 0.6 } },
+      body: { freq: 1000, q: 0.7, gain: 2.6 },
+      air: { amt: 0.012, freq: 2200, q: 0.5 },
       osc: [
-        { w: 'sawtooth', mul: 1, gain: 0.6, detune: -5 },
-        { w: 'sawtooth', mul: 1, gain: 0.5, detune: 6 },
-        { w: 'square', mul: 1, gain: 0.1 }
+        { w: 'sawtooth', mul: 1, gain: 0.5, detune: -6 },
+        { w: 'sawtooth', mul: 1, gain: 0.45, detune: 7 },
+        { w: 'square', mul: 0.5, gain: 0.12 }
       ],
-      vib: { rate: 5, depth: 4, delay: 0.45 },
-      spread: 0.4
+      vib: { rate: 5, depth: 4.5, delay: 0.45 },
+      spread: 0.45
     },
     brassStab: {
-      name: '铜管重击', group: 'brass', gain: 0.38, sendRev: 0.26, sendDly: 0.05,
-      env: { a: 0.008, d: 0.18, s: 0.25, r: 0.25 },
-      filt: { type: 'lowpass', freq: 1200, q: 1.1, env: { a: 0.01, d: 0.2, amt: 2.4, s: 0.2 } },
+      name: '铜管重击', group: 'brass', gain: 0.38, sendRev: 0.3, sendDly: 0.05,
+      env: { a: 0.008, d: 0.2, s: 0.25, r: 0.28 },
+      filt: { type: 'lowpass', freq: 1400, q: 1.0, env: { a: 0.01, d: 0.2, amt: 2.2, s: 0.2 } },
+      body: { freq: 1200, q: 0.8, gain: 2.2 },
+      noise: { amt: 0.03, decay: 0.03, hp: 2200 },
       osc: [
-        { w: 'sawtooth', mul: 1, gain: 0.6, detune: -6 },
-        { w: 'sawtooth', mul: 1, gain: 0.6, detune: 6 },
+        { w: 'sawtooth', mul: 1, gain: 0.55, detune: -7 },
+        { w: 'sawtooth', mul: 1, gain: 0.55, detune: 7 },
         { w: 'square', mul: 0.5, gain: 0.15 }
       ],
       spread: 0.5
     },
     frenchHorn: {
-      name: '圆号', group: 'brass', gain: 0.3, sendRev: 0.36, sendDly: 0.03,
-      env: { a: 0.1, d: 0.35, s: 0.84, r: 0.5 },
-      filt: { type: 'lowpass', freq: 700, q: 0.7, env: { a: 0.12, d: 0.4, amt: 1.4, s: 0.6 } },
+      name: '圆号', group: 'brass', gain: 0.3, sendRev: 0.4, sendDly: 0.03,
+      env: { a: 0.11, d: 0.4, s: 0.85, r: 0.55 },
+      filt: { type: 'lowpass', freq: 850, q: 0.65, env: { a: 0.12, d: 0.4, amt: 1.4, s: 0.6 } },
+      body: { freq: 500, q: 1, gain: 2.1 },
+      air: { amt: 0.01, freq: 1800, q: 0.5 },
       osc: [
-        { w: 'sawtooth', mul: 1, gain: 0.5, detune: -4 },
+        { w: 'sawtooth', mul: 1, gain: 0.45, detune: -5 },
         { w: 'sine', mul: 1, gain: 0.4 },
-        { w: 'triangle', mul: 2, gain: 0.1 }
+        { w: 'triangle', mul: 2, gain: 0.08 }
       ],
-      vib: { rate: 4.4, depth: 4, delay: 0.5 },
-      spread: 0.3
+      vib: { rate: 4.4, depth: 4.5, delay: 0.5 },
+      spread: 0.35
     },
 
     /* ===== 管乐 ===== */
@@ -657,12 +679,12 @@
   /* ---------------- 鼓组音色 ---------------- */
   var DRUMS = {
     /* 管弦 */
-    timpani:   { name: '定音鼓', kind: 'tom', f: [120, 62], decay: 1.3, gain: 0.9, noise: 0.5, lp: 900 },
+    timpani:   { name: '定音鼓', kind: 'tom', f: [128, 58], decay: 1.55, gain: 0.95, noise: 0.6, lp: 820 },
     bassDrum:  { name: '大鼓', kind: 'kick', f: [140, 48], decay: 0.9, gain: 0.95, click: 0.25, noise: 0.5 },
-    orchSnare: { name: '军鼓', kind: 'snare', f: 190, decay: 0.22, gain: 0.6, noise: 0.8, bp: 2200 },
-    taiko:     { name: '太鼓', kind: 'tom', f: [150, 72], decay: 0.55, gain: 0.9, noise: 0.35, lp: 700 },
+    orchSnare: { name: '军鼓', kind: 'snare', f: 190, decay: 0.24, gain: 0.6, noise: 0.8, bp: 2200 },
+    taiko:     { name: '太鼓', kind: 'tom', f: [150, 70], decay: 0.62, gain: 0.92, noise: 0.4, lp: 740 },
     tom:       { name: '嗵鼓', kind: 'tom', f: [200, 110], decay: 0.35, gain: 0.7, noise: 0.3, lp: 1300 },
-    crash:     { name: '镲片', kind: 'cymbal', decay: 1.8, gain: 0.4, hp: 3500, noise: 1 },
+    crash:     { name: '镲片', kind: 'cymbal', decay: 2.15, gain: 0.4, hp: 3200, noise: 1 },
     /* 电子 */
     kick909:   { name: '909 底鼓', kind: 'kick', f: [180, 50], decay: 0.34, gain: 1, click: 0.4, noise: 0.2 },
     snare909:  { name: '909 军鼓', kind: 'snare', f: 200, decay: 0.18, gain: 0.62, noise: 0.8, bp: 1800 },
@@ -723,7 +745,7 @@
 
   /* 人声合唱：每个声部由共振峰滤波 + 气声 + 颤音构成 */
   function buildVocalVoices(ctx, inst, freq, t0, stopAt, dest, sources, oscs, lfoTargets) {
-    inst.voices.forEach(function (v) {
+    inst.voices.forEach(function (v, vi) {
       var vGain = ctx.createGain();
       vGain.gain.value = v.gain === undefined ? 1 : v.gain;
       if (ctx.createStereoPanner) {
@@ -756,6 +778,7 @@
       formantSum.connect(vGain);
 
       var count = Math.max(1, v.osc || 2);
+      var voiceOscs = [];
       for (var i = 0; i < count; i++) {
         var o = ctx.createOscillator();
         o.type = v.wave || 'sawtooth';
@@ -770,8 +793,21 @@
         o.stop(stopAt);
         sources.push(o);
         oscs.push(o);
+        voiceOscs.push(o);
         lfoTargets.push(o.detune);
       }
+
+      // 慢速音高漂移：每个声部独立，模拟真人合唱的微小不稳定
+      var drift = ctx.createOscillator();
+      drift.type = 'sine';
+      drift.frequency.value = 0.16 + vi * 0.05;
+      var dg = ctx.createGain();
+      dg.gain.value = v.drift === undefined ? 2.2 : v.drift;
+      drift.connect(dg);
+      voiceOscs.forEach(function (o) { dg.connect(o.detune); });
+      drift.start(t0);
+      drift.stop(stopAt);
+      sources.push(drift);
 
       if (v.breath) {
         var ns = ctx.createBufferSource();
@@ -840,8 +876,16 @@
     }
     tail.connect(buses.input || buses.dry || ctx.destination);
 
-    // 滤波器
+    // 滤波器 + 琴体/号体共振
     var filt = null;
+    var body = null;
+    if (inst.body) {
+      body = ctx.createBiquadFilter();
+      body.type = inst.body.type || 'peaking';
+      body.frequency.value = inst.body.freq || 300;
+      body.Q.value = inst.body.q || 1;
+      body.gain.value = inst.body.gain === undefined ? 2 : inst.body.gain;
+    }
     if (inst.filt) {
       filt = ctx.createBiquadFilter();
       filt.type = inst.filt.type || 'lowpass';
@@ -855,9 +899,16 @@
       } else {
         filt.frequency.value = Math.min(18000, base);
       }
-      filt.connect(out);
+      if (body) {
+        filt.connect(body);
+        body.connect(out);
+      } else {
+        filt.connect(out);
+      }
+    } else if (body) {
+      body.connect(out);
     }
-    var dest = filt || out;
+    var dest = body || filt || out;
 
     // 音源
     var oscs = [];
@@ -954,6 +1005,22 @@
       ns.connect(nf); nf.connect(ng); ng.connect(out);
       ns.start(t0); ns.stop(t0 + Math.min(dur + 0.2, 0.8));
       sources.push(ns);
+    }
+
+    // 持续气声：弓毛、号口、笛口气流，让长音不再是干净的合成器
+    if (inst.air) {
+      var as = ctx.createBufferSource();
+      as.buffer = noiseBuffer(ctx);
+      as.loop = true;
+      var af = ctx.createBiquadFilter();
+      af.type = inst.air.type || 'bandpass';
+      af.frequency.value = inst.air.freq || 2800;
+      af.Q.value = inst.air.q || 0.6;
+      var ag = ctx.createGain();
+      ag.gain.value = peak * (inst.air.amt || 0.02);
+      as.connect(af); af.connect(ag); ag.connect(out);
+      as.start(t0); as.stop(stopAt);
+      sources.push(as);
     }
 
     return { sources: sources, gain: out, end: stopAt };

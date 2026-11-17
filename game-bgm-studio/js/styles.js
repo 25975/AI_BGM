@@ -57,6 +57,7 @@
       layers: [
         L('pad', '弦乐铺底', 'pad', 'stringPad', 'sustain', { gain: 0.5, low: 45, high: 72, pan: -0.25 }),
         L('low', '低音弦乐', 'bass', 'cello', 'pulse8', { gain: 0.55, low: 33, high: 50 }),
+        L('ost', '弦乐固定音型', 'arp', 'stringsStacc', 'arp8', { gain: 0.3, low: 55, high: 79, minIntensity: 1, pan: -0.15 }),
         L('harp', '竖琴分解', 'arp', 'harp', 'arp8', { gain: 0.36, low: 55, high: 84, minIntensity: 1, pan: 0.3 }),
         L('brass', '铜管主题', 'lead', 'brassSection', 'melody', { gain: 0.62, low: 55, high: 79 }),
         L('choir', '人声合唱', 'pad', 'choirPad', 'sustain', { gain: 0.34, low: 52, high: 76, minIntensity: 2, pan: 0.2 }),
@@ -159,7 +160,7 @@
         intensity: { 1: ['hat'], 2: ['taiko'], 3: ['crash'] }
       },
       layers: [
-        L('ost', '弦乐固定音型', 'arp', 'strings', 'ostinato16', { gain: 0.46, low: 45, high: 72, pan: -0.25 }),
+        L('ost', '弦乐固定音型', 'arp', 'stringsStacc', 'ostinato16', { gain: 0.46, low: 45, high: 72, pan: -0.25 }),
         L('bass', '低音推进', 'bass', 'cello', 'pulse16', { gain: 0.62, low: 33, high: 50 }),
         L('brass', '铜管重击', 'stab', 'brassStab', 'stab', { gain: 0.6, low: 48, high: 72 }),
         L('lead', '铜管主题', 'lead', 'brassSection', 'melody', { gain: 0.58, low: 57, high: 81 }),
