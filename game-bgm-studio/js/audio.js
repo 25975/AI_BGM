@@ -398,7 +398,12 @@
     if (!AC) return Promise.reject(new Error('浏览器不支持 Web Audio API'));
     this.ctx = new AC({ latencyHint: 'interactive' });
     var self = this;
-    return this.ctx.resume().then(function () { return self.ctx; });
+    return this.ctx.resume().then(function () {
+      if (GBG.samples && GBG.samples.load) {
+        GBG.samples.load().catch(function () {});
+      }
+      return self.ctx;
+    });
   };
 
   AudioEngine.prototype.setSong = function (song) {
@@ -589,28 +594,33 @@
       var OAC = global.OfflineAudioContext || global.webkitOfflineAudioContext;
       if (!OAC) return Promise.reject(new Error('浏览器不支持 OfflineAudioContext'));
       var ctx = new OAC(2, frames, sr);
-      var mix = options.mix || {};
-      var graph = buildGraph(ctx, song, {
-        mix: mix,
-        masterGain: options.masterGain,
-        reverbSec: options.reverbSec,
-        noReverb: options.noReverb,
-        offline: true
-      });
-      var barIndex = options.barIndex || buildBarIndex(song);
-      for (var bar = from; bar < to; bar++) {
-        scheduleBar(ctx, graph, barIndex, bar, (bar - from) * 4 * spb + 0.02);
-      }
-      return ctx.startRendering().then(function (buffer) {
-        var L = buffer.getChannelData(0);
-        var R = buffer.getChannelData(1);
-        var channels = [L, R];
-        if (options.seamlessLoop) {
-          var loopSamples = Math.round((to - from) * 4 * spb * sr);
-          var tailSamples = Math.min(frames - loopSamples, Math.round(tail * sr));
-          channels = GBG.wav.foldTail(channels, loopSamples, tailSamples, sr);
+      var sampleReady = GBG.samples && GBG.samples.load
+        ? GBG.samples.load().catch(function () { return null; })
+        : Promise.resolve(null);
+      return sampleReady.then(function () {
+        var mix = options.mix || {};
+        var graph = buildGraph(ctx, song, {
+          mix: mix,
+          masterGain: options.masterGain,
+          reverbSec: options.reverbSec,
+          noReverb: options.noReverb,
+          offline: true
+        });
+        var barIndex = options.barIndex || buildBarIndex(song);
+        for (var bar = from; bar < to; bar++) {
+          scheduleBar(ctx, graph, barIndex, bar, (bar - from) * 4 * spb + 0.02);
         }
-        return { channels: channels, sampleRate: sr, frames: channels[0].length, duration: channels[0].length / sr };
+        return ctx.startRendering().then(function (buffer) {
+          var L = buffer.getChannelData(0);
+          var R = buffer.getChannelData(1);
+          var channels = [L, R];
+          if (options.seamlessLoop) {
+            var loopSamples = Math.round((to - from) * 4 * spb * sr);
+            var tailSamples = Math.min(frames - loopSamples, Math.round(tail * sr));
+            channels = GBG.wav.foldTail(channels, loopSamples, tailSamples, sr);
+          }
+          return { channels: channels, sampleRate: sr, frames: channels[0].length, duration: channels[0].length / sr };
+        });
       });
     });
   }

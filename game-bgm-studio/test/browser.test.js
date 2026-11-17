@@ -13,6 +13,9 @@
   const song = LF.state.song;
   ok(!!song, '应用已生成歌曲');
   ok(document.querySelectorAll('.style-item').length === 19, '19 个风格卡片', document.querySelectorAll('.style-item').length);
+  try { await G.samples.load(); } catch (e) {}
+  ok(!!G.samples && G.samples.count() >= 40, '真实采样已加载', G.samples ? G.samples.count() : 0);
+  ok(!!G.samples && G.samples.meta && /CC BY 3\.0/.test(G.samples.meta.license || ''), '采样授权已标注', G.samples && G.samples.meta ? G.samples.meta.license : '');
   ok(!!document.getElementById('roll').width, '卷帘画布已初始化');
   out.details.initial = { title: song.meta.title, style: song.meta.styleId, notes: song.stats.notes };
 

@@ -244,6 +244,7 @@
     /* ===== 弦乐 / 铜管 ===== */
     strings: {
       name: '弦乐组', group: 'strings', gain: 0.3, sendRev: 0.38, sendDly: 0.03,
+      sample: { bank: 'string_ensemble_1', loop: true, gain: 1.45, attack: 0.025 },
       env: { a: 0.38, d: 0.55, s: 0.88, r: 1.0 },
       filt: { type: 'lowpass', freq: 2800, q: 0.55, env: { a: 0.2, d: 0.4, amt: 0.5, s: 0.85 } },
       body: { freq: 320, q: 1, gain: 2.4 },
@@ -260,6 +261,7 @@
     },
     stringsStacc: {
       name: '弦乐断奏', group: 'strings', gain: 0.42, sendRev: 0.3, sendDly: 0.03,
+      sample: { bank: 'pizzicato_strings', loop: false, gain: 1.75, attack: 0.004 },
       env: { a: 0.012, d: 0.1, s: 0.32, r: 0.14 },
       filt: { type: 'lowpass', freq: 3600, q: 0.65, env: { a: 0.004, d: 0.07, amt: 0.4, s: 0.7 } },
       body: { freq: 380, q: 1, gain: 3 },
@@ -274,6 +276,7 @@
     },
     stringPad: {
       name: '弦乐铺底', group: 'strings', gain: 0.28, sendRev: 0.44, sendDly: 0.03,
+      sample: { bank: 'string_ensemble_1', loop: true, gain: 1.35, attack: 0.03 },
       env: { a: 0.85, d: 0.8, s: 0.9, r: 1.6 },
       filt: { type: 'lowpass', freq: 1800, q: 0.45, env: { a: 0.5, d: 0.5, amt: 0.5, s: 0.9 } },
       body: { freq: 260, q: 0.9, gain: 2.1 },
@@ -316,6 +319,7 @@
     },
     cello: {
       name: '大提琴', group: 'strings', gain: 0.36, sendRev: 0.33, sendDly: 0.03,
+      sample: { bank: 'cello', loop: true, gain: 2.0, attack: 0.03, low: { freq: 120, gain: 3.5 } },
       env: { a: 0.16, d: 0.4, s: 0.87, r: 0.6 },
       filt: { type: 'lowpass', freq: 1600, q: 0.65 },
       body: { freq: 180, q: 1, gain: 2.6 },
@@ -331,6 +335,7 @@
     },
     brassSection: {
       name: '铜管组', group: 'brass', gain: 0.34, sendRev: 0.34, sendDly: 0.04,
+      sample: { bank: 'brass_section', loop: true, gain: 1.8, attack: 0.015 },
       env: { a: 0.055, d: 0.35, s: 0.84, r: 0.45 },
       filt: { type: 'lowpass', freq: 1150, q: 0.8, env: { a: 0.05, d: 0.32, amt: 2.0, s: 0.6 } },
       body: { freq: 1000, q: 0.7, gain: 2.6 },
@@ -476,6 +481,7 @@
     },
     choirPad: {
       name: '人声合唱', group: 'synth', gain: 1.45, sendRev: 0.6, sendDly: 0.12,
+      sample: { bank: 'choir_aahs', loop: true, gain: 0.62, attack: 0.03 },
       env: { a: 1.0, d: 0.9, s: 0.94, r: 2.4 },
       filt: { type: 'lowpass', freq: 9000, q: 0.3 },
       // 四个声部：女高音 / 女低音 / 中音 / 男高音，各自一套元音共振峰
@@ -502,6 +508,7 @@
     },
     sopranoSolo: {
       name: '女高音独唱', group: 'vocal', gain: 1.2, sendRev: 0.55, sendDly: 0.14,
+      sample: { bank: 'voice_oohs', loop: true, gain: 0.62, attack: 0.02 },
       env: { a: 0.3, d: 0.6, s: 0.9, r: 1.6 },
       filt: { type: 'lowpass', freq: 9000, q: 0.3 },
       voices: [
@@ -833,6 +840,11 @@
   function playVoice(ctx, buses, instId, midi, when, dur, vel, opts) {
     opts = opts || {};
     var inst = DEFS[instId] || DEFS.piano;
+    // 真实采样优先；未加载/解码失败时继续走合成器
+    if (inst.sample && GBG.samples && GBG.samples.canPlay(inst.sample.bank)) {
+      var sv = GBG.samples.play(ctx, buses, inst, midi, when, dur, vel, opts);
+      if (sv) return sv;
+    }
     var t0 = Math.max(when, ctx.currentTime + 0.002);
     var end = t0 + Math.max(0.05, dur);
     var stopAt = end + inst.env.r + 0.1;
@@ -1110,6 +1122,10 @@
     opts = opts || {};
     var d = DRUMS[drumId];
     if (!d) return null;
+    if (drumId === 'timpani' && GBG.samples && GBG.samples.canPlay('timpani')) {
+      var smp = GBG.samples.playTimpani(ctx, buses, opts.midi === undefined ? 48 : opts.midi, when, vel, opts);
+      if (smp) return smp;
+    }
     var t0 = Math.max(when, ctx.currentTime + 0.002);
     var sources = [];
     var out = ctx.createGain();
