@@ -20,6 +20,7 @@
     choir_aahs: 0.55,
     brass_section: 0.62,
     voice_oohs: 0.55,
+    female_vocal: 0.55,
     cello: 0.6,
     pizzicato_strings: 0.7,
     timpani: 0.8
@@ -180,7 +181,8 @@
     var gain = inst.gain * (0.3 + 0.7 * vel) * (opts.gain || 1) * (spec.gain === undefined ? 1 : spec.gain);
 
     var out = ctx.createGain();
-    connectTail(ctx, out, buses, inst, opts);
+    var sendInst = spec.sendRev === undefined ? inst : { sendRev: spec.sendRev, sendDly: inst.sendDly };
+    connectTail(ctx, out, buses, sendInst, opts);
 
     var src = ctx.createBufferSource();
     src.buffer = s.buf;
@@ -216,7 +218,38 @@
 
     src.start(t0);
     src.stop(stopAt);
-    return { sources: [src], gain: out, end: stopAt };
+
+    var sources = [src];
+    if (spec.scoop) {
+      src.detune.setValueAtTime(-spec.scoop, t0);
+      src.detune.linearRampToValueAtTime(0, t0 + 0.12);
+    }
+    if (spec.vibrato) {
+      var vib = ctx.createOscillator();
+      vib.type = 'sine';
+      vib.frequency.value = spec.vibrato.rate || 4.8;
+      var vg = ctx.createGain();
+      vg.gain.setValueAtTime(0, t0);
+      vg.gain.linearRampToValueAtTime(spec.vibrato.depth || 8, t0 + (spec.vibrato.delay || 0.3));
+      vib.connect(vg);
+      vg.connect(src.detune);
+      vib.start(t0);
+      vib.stop(stopAt);
+      sources.push(vib);
+    }
+    if (spec.drift) {
+      var drift = ctx.createOscillator();
+      drift.type = 'sine';
+      drift.frequency.value = 0.22;
+      var dg = ctx.createGain();
+      dg.gain.value = spec.drift;
+      drift.connect(dg);
+      dg.connect(src.detune);
+      drift.start(t0);
+      drift.stop(stopAt);
+      sources.push(drift);
+    }
+    return { sources: sources, gain: out, end: stopAt };
   }
 
   function playTimpani(ctx, buses, midi, when, vel, opts) {

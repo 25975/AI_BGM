@@ -508,7 +508,7 @@
     },
     sopranoSolo: {
       name: '女高音独唱', group: 'vocal', gain: 1.2, sendRev: 0.55, sendDly: 0.14,
-      sample: { bank: 'voice_oohs', loop: true, gain: 0.62, attack: 0.02 },
+      sample: { bank: 'female_vocal', loop: true, gain: 0.7, attack: 0.05, sendRev: 0.22, vibrato: { rate: 4.8, depth: 9, delay: 0.35 }, drift: 2.4, scoop: 14 },
       env: { a: 0.3, d: 0.6, s: 0.9, r: 1.6 },
       filt: { type: 'lowpass', freq: 9000, q: 0.3 },
       voices: [

@@ -2,7 +2,7 @@
   "name": "loopforge-game-bgm-studio",
   "version": "1.0.0",
   "private": true,
-  "description": "LoopForge — 纯前端游戏 BGM 生成器：19 种风格、垂直分层、FluidR3_GM 真实管弦采样 + 四声部人声、无缝循环、MIDI/分轨导出",
+  "description": "LoopForge — 纯前端游戏 BGM 生成器：19 种风格、垂直分层、FluidR3_GM 管弦采样 + 真人女声循环长音、无缝循环、MIDI/分轨导出",
   "scripts": {
     "build": "node build.js",
     "samples": "node tools/make-samples-data.js",

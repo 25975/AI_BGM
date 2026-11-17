@@ -16,7 +16,8 @@
 | `cello` | 大提琴低音 |
 | `brass_section` | 铜管组 / 号角 |
 | `choir_aahs` | 混声合唱 |
-| `voice_oohs` | 女高音独唱 |
+| `voice_oohs` | 女高音独唱（备用 GM 女声） |
+| `female_vocal` | 真人女声循环长音 C#5 / D#5 / E5 / F5 |
 | `timpani` | 定音鼓 |
 
 署名（可放在游戏 credits / 关于页面）：
@@ -25,3 +26,14 @@
 > Rendered samples via MIDI.js soundfonts (https://github.com/gleitz/midi-js-soundfonts).
 
 采样只做了电平归一化、变调播放和循环点处理；没有改变原始录音的授权。
+
+## 女声循环长音（CC0）
+
+- **Female singing loopable notes** by [bevibeldesign](https://freesound.org/people/bevibeldesign/packs/17701/)
+- Freesound pack 17701，四个音符（C#5 / D#5 / E5 / F5），**CC0**
+- 来源页：
+  - <https://freesound.org/people/bevibeldesign/sounds/315850/>
+  - <https://freesound.org/people/bevibeldesign/sounds/315849/>
+  - <https://freesound.org/people/bevibeldesign/sounds/315856/>
+  - <https://freesound.org/people/bevibeldesign/sounds/315855/>
+- CC0 不要求署名；这里保留来源记录，方便追溯。
