@@ -186,6 +186,21 @@
     ok(allLevels.every(l => l.peak > 0.05 && l.peak <= 1.001), '各风格峰值在范围内', levels);
     ok(allLevels.every(l => l.rms > 0.02), '各风格 RMS 非静音', levels);
 
+    /* ---- 12b. 人声合唱可听 ---- */
+    const choirSong = G.composer.generate({
+      styleId: 'epic', seed: 'choir-test', bars: 16, intensity: 2, clarity: 0.55
+    });
+    const choirPart = choirSong.parts.find(p => p.id === 'choir');
+    const choirRes = await G.audio.renderRange(choirSong, {
+      fromBar: 0, toBar: 16, tailSec: 0.8, sampleRate: 22050,
+      mix: { solo: { choir: true } }
+    });
+    const choirPeak = G.wav.peakOf(choirRes.channels);
+    const choirRms = G.wav.rmsOf(choirRes.channels);
+    ok(!!choirPart && choirPart.notes.length > 0, '人声合唱声部存在', choirPart ? choirPart.notes.length : 0);
+    ok(choirPeak > 0.08 && choirRms > 0.004, '人声合唱可听', { peak: +choirPeak.toFixed(3), rms: +choirRms.toFixed(4), notes: choirPart ? choirPart.notes.length : 0 });
+    out.details.choir = { peak: +choirPeak.toFixed(3), rms: +choirRms.toFixed(4), notes: choirPart ? choirPart.notes.length : 0 };
+
     /* ---- 13. 清晰度（编曲精简） ---- */
     const clarityEl = document.getElementById('clarity');
     LF.state.styleId = 'epic';

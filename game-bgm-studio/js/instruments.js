@@ -441,17 +441,30 @@
       spread: 0.7
     },
     choirPad: {
-      name: '人声垫', group: 'synth', gain: 0.28, sendRev: 0.55, sendDly: 0.1,
-      env: { a: 0.9, d: 0.8, s: 0.9, r: 1.8 },
-      filt: { type: 'lowpass', freq: 1800, q: 0.4 },
-      osc: [
-        { w: 'sine', mul: 1, gain: 0.45, detune: -6 },
-        { w: 'sine', mul: 1, gain: 0.45, detune: 7 },
-        { w: 'sine', mul: 2, gain: 0.18 },
-        { w: 'sine', mul: 3.01, gain: 0.08 }
+      name: '人声合唱', group: 'synth', gain: 1.45, sendRev: 0.6, sendDly: 0.12,
+      env: { a: 1.0, d: 0.9, s: 0.94, r: 2.4 },
+      filt: { type: 'lowpass', freq: 9000, q: 0.3 },
+      // 四个声部：女高音 / 女低音 / 中音 / 男高音，各自一套元音共振峰
+      voices: [
+        {
+          mul: 2, gain: 0.22, pan: -0.42, detune: 5, osc: 2, breath: 0.05, dry: 0.05,
+          formants: [{ f: 900, q: 5, g: 1 }, { f: 1350, q: 6, g: 0.6 }, { f: 3200, q: 8, g: 0.3 }]
+        },
+        {
+          mul: 1, gain: 0.45, pan: -0.26, detune: -4, osc: 2, breath: 0.06, dry: 0.08,
+          formants: [{ f: 820, q: 5, g: 1 }, { f: 1180, q: 6, g: 0.68 }, { f: 2950, q: 8, g: 0.32 }]
+        },
+        {
+          mul: 1, gain: 0.36, pan: 0.06, detune: 7, osc: 2, breath: 0.055, dry: 0.07,
+          formants: [{ f: 700, q: 5, g: 1 }, { f: 1080, q: 6, g: 0.64 }, { f: 2700, q: 7, g: 0.3 }]
+        },
+        {
+          mul: 0.5, gain: 0.42, pan: 0.3, detune: -6, osc: 2, breath: 0.065, dry: 0.09,
+          formants: [{ f: 500, q: 4.5, g: 1 }, { f: 900, q: 5.5, g: 0.62 }, { f: 2400, q: 6.5, g: 0.28 }]
+        }
       ],
-      vib: { rate: 4, depth: 9, delay: 0.8 },
-      spread: 0.75
+      vib: { rate: 4.4, depth: 8, delay: 1.0 },
+      spread: 0.6
     },
     organPad: {
       name: '风琴', group: 'synth', gain: 0.25, sendRev: 0.28, sendDly: 0.04,
@@ -683,6 +696,78 @@
 
   var PITCHED_DRUM = { timpani: true, tom: true, taiko: true, djembe: true, chipTom: true, bassDrum: true, kickSoft: true, subBoom: true };
 
+  /* 人声合唱：每个声部由共振峰滤波 + 气声 + 颤音构成 */
+  function buildVocalVoices(ctx, inst, freq, t0, stopAt, dest, sources, oscs, lfoTargets) {
+    inst.voices.forEach(function (v) {
+      var vGain = ctx.createGain();
+      vGain.gain.value = v.gain === undefined ? 1 : v.gain;
+      if (ctx.createStereoPanner) {
+        var p = ctx.createStereoPanner();
+        p.pan.value = U.clamp(v.pan || 0, -1, 1);
+        vGain.connect(p);
+        p.connect(dest);
+      } else {
+        vGain.connect(dest);
+      }
+
+      var formantIn = ctx.createGain();
+      var formantSum = ctx.createGain();
+      var dry = ctx.createGain();
+      dry.gain.value = v.dry === undefined ? 0.06 : v.dry;
+      formantIn.connect(dry);
+      dry.connect(formantSum);
+
+      (v.formants || []).forEach(function (f) {
+        var bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = U.clamp(f.f, 80, ctx.sampleRate / 2 - 200);
+        bp.Q.value = f.q || 8;
+        var g = ctx.createGain();
+        g.gain.value = f.g === undefined ? 1 : f.g;
+        formantIn.connect(bp);
+        bp.connect(g);
+        g.connect(formantSum);
+      });
+      formantSum.connect(vGain);
+
+      var count = Math.max(1, v.osc || 2);
+      for (var i = 0; i < count; i++) {
+        var o = ctx.createOscillator();
+        o.type = v.wave || 'sawtooth';
+        var f = Math.min(freq * (v.mul || 1), ctx.sampleRate / 2 - 200);
+        o.frequency.value = Math.max(20, f);
+        o.detune.value = (v.detune || 0) + (i - (count - 1) / 2) * 5;
+        var og = ctx.createGain();
+        og.gain.value = 1 / count;
+        o.connect(og);
+        og.connect(formantIn);
+        o.start(t0);
+        o.stop(stopAt);
+        sources.push(o);
+        oscs.push(o);
+        lfoTargets.push(o.detune);
+      }
+
+      if (v.breath) {
+        var ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx);
+        ns.loop = true;
+        var hp = ctx.createBiquadFilter();
+        hp.type = 'highpass';
+        hp.frequency.value = 1600;
+        hp.Q.value = 0.6;
+        var bg = ctx.createGain();
+        bg.gain.value = v.breath;
+        ns.connect(hp);
+        hp.connect(bg);
+        bg.connect(vGain);
+        ns.start(t0);
+        ns.stop(stopAt);
+        sources.push(ns);
+      }
+    });
+  }
+
   /* ---------------- 播放：旋律音色 ---------------- */
   function playVoice(ctx, buses, instId, midi, when, dur, vel, opts) {
     opts = opts || {};
@@ -752,53 +837,57 @@
     // 音源
     var oscs = [];
     var lfoTargets = [];
-    var nOsc = inst.osc.length;
-    inst.osc.forEach(function (spec, i) {
-      var o = ctx.createOscillator();
-      if (spec.w === 'pulse') {
-        o.setPeriodicWave(pulseWave(ctx, spec.duty || 0.25));
-      } else {
-        o.type = spec.w || 'sine';
-      }
-      var f = freq * (spec.mul || 1);
-      if (spec.pitch) {
-        o.frequency.setValueAtTime(Math.max(20, f * spec.pitch.from), t0);
-        o.frequency.exponentialRampToValueAtTime(Math.max(20, f), t0 + (spec.pitch.time || 0.05));
-      } else {
-        o.frequency.value = f;
-      }
-      if (spec.detune) o.detune.value = spec.detune;
+    if (inst.voices && inst.voices.length) {
+      buildVocalVoices(ctx, inst, freq, t0, stopAt, dest, sources, oscs, lfoTargets);
+    } else {
+      var nOsc = inst.osc.length;
+      inst.osc.forEach(function (spec, i) {
+        var o = ctx.createOscillator();
+        if (spec.w === 'pulse') {
+          o.setPeriodicWave(pulseWave(ctx, spec.duty || 0.25));
+        } else {
+          o.type = spec.w || 'sine';
+        }
+        var f = freq * (spec.mul || 1);
+        if (spec.pitch) {
+          o.frequency.setValueAtTime(Math.max(20, f * spec.pitch.from), t0);
+          o.frequency.exponentialRampToValueAtTime(Math.max(20, f), t0 + (spec.pitch.time || 0.05));
+        } else {
+          o.frequency.value = f;
+        }
+        if (spec.detune) o.detune.value = spec.detune;
 
-      var og = ctx.createGain();
-      og.gain.value = spec.gain === undefined ? 1 : spec.gain;
+        var og = ctx.createGain();
+        og.gain.value = spec.gain === undefined ? 1 : spec.gain;
 
-      if (inst.spread && ctx.createStereoPanner && nOsc > 1) {
-        var sp = ctx.createStereoPanner();
-        sp.pan.value = inst.spread * ((i / (nOsc - 1)) - 0.5) * 1.6;
-        o.connect(og); og.connect(sp); sp.connect(dest);
-      } else {
-        o.connect(og); og.connect(dest);
-      }
+        if (inst.spread && ctx.createStereoPanner && nOsc > 1) {
+          var sp = ctx.createStereoPanner();
+          sp.pan.value = inst.spread * ((i / (nOsc - 1)) - 0.5) * 1.6;
+          o.connect(og); og.connect(sp); sp.connect(dest);
+        } else {
+          o.connect(og); og.connect(dest);
+        }
 
-      // FM 调制
-      if (spec.fm) {
-        var mod = ctx.createOscillator();
-        mod.type = spec.fm.type || 'sine';
-        mod.frequency.value = f * spec.fm.ratio;
-        var mg = ctx.createGain();
-        mg.gain.setValueAtTime(f * spec.fm.index, t0);
-        mg.gain.setTargetAtTime(f * spec.fm.index * (spec.fm.sustain === undefined ? 0.1 : spec.fm.sustain), t0, Math.max(0.01, (spec.fm.decay || 0.3) / 3));
-        mod.connect(mg); mg.connect(o.frequency);
-        mod.start(t0); mod.stop(stopAt);
-        sources.push(mod);
-      }
+        // FM 调制
+        if (spec.fm) {
+          var mod = ctx.createOscillator();
+          mod.type = spec.fm.type || 'sine';
+          mod.frequency.value = f * spec.fm.ratio;
+          var mg = ctx.createGain();
+          mg.gain.setValueAtTime(f * spec.fm.index, t0);
+          mg.gain.setTargetAtTime(f * spec.fm.index * (spec.fm.sustain === undefined ? 0.1 : spec.fm.sustain), t0, Math.max(0.01, (spec.fm.decay || 0.3) / 3));
+          mod.connect(mg); mg.connect(o.frequency);
+          mod.start(t0); mod.stop(stopAt);
+          sources.push(mod);
+        }
 
-      o.start(t0);
-      o.stop(stopAt);
-      sources.push(o);
-      oscs.push(o);
-      lfoTargets.push(o.detune);
-    });
+        o.start(t0);
+        o.stop(stopAt);
+        sources.push(o);
+        oscs.push(o);
+        lfoTargets.push(o.detune);
+      });
+    }
 
     // 颤音
     if (inst.vib && oscs.length) {
